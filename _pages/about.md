@@ -1,6 +1,6 @@
 ---
-layout: Home
-title: Home
+layout: about
+title: about
 permalink: /
 subtitle: Laboratório de Biologia Evolutiva e Sistemática de Tetrápodes Atuais
 
