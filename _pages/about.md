@@ -5,16 +5,14 @@ permalink: /
 subtitle: Laboratório de Biologia Evolutiva e Sistemática de Tetrápodes Atuais
 
 profile:
-  name: Prof. Pedro P. G. Taucci
   align: right
   image: taucci-profile.jpeg
   image_circular: false # crops the image to make it circular
-  address: >
-    Department of Biology<br />
-    School of Sciences<br />
-    Av. Eng. Luís Edmundo Carrijo Coube, 2085<br />
-    Bauru, SP, Brazil <br />
-    17033-360
+  <p>Prof. Pedro P. G. Taucci</p> 
+  <p>Head of LaBESTA</p>
+  <p>Department of Biology, School of Sciences</p>
+  <p>São Paulo State University (Unesp), Bauru, Brazil</p>
+
 
 
 news: true # includes a list of news items
