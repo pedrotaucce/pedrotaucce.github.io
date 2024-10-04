@@ -9,7 +9,7 @@ profile:
   image: taucci-profile.jpeg
   image_circular: false # crops the image to make it circular
   more_info: >
-  Prof. Pedro P. G. Taucci
+  <p>Prof. Pedro P. G. Taucci</p>p>
   <p>Head of LaBESTA</p>
   <p>Department of Biology, School of Sciences</p>
   <p>São Paulo State University (Unesp), Bauru, Brazil</p>
