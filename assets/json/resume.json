@@ -1,36 +1,36 @@
 {
   "basics": {
-    "name": "Albert Einstein",
-    "label": "Scientist",
+    "name": "Pedro P. G. Taucci",
+    "label": "Assistant Professor",
     "image": "",
-    "email": "albert@einstein.de",
-    "phone": "(912) 123-4567",
-    "url": "https://alshedivat.github.io/al-folio/",
-    "summary": "A German-born theoretical physicist, widely ranked among the greatest and most influential scientists of all time",
+    "email": "ptaucce@unicamp.br",
+    "phone": "",
+    "url": "https://labesta.org",
+    "summary": "",
     "location": {
-      "address": "2712 Broadway St",
-      "postalCode": "CA 94115",
-      "city": "San Francisco",
-      "countryCode": "US",
-      "region": "California"
+      "address": "Av. Eng. Luís Edmundo Carrijo Coube, 2085",
+      "postalCode": "17033-360",
+      "city": "Bauru",
+      "countryCode": "BR",
+      "region": "São Paulo"
     },
     "profiles": [
       {
         "network": "Twitter",
-        "username": "AlbertEinstein",
-        "url": "https://twitter.com/AlbertEinstein"
+        "username": "pedrotaucce",
+        "url": "https://twitter.com/pedrotaucce"
       }
     ]
   },
   "work": [
     {
-      "name": "Institute for Advanced Study, Princeton University",
-      "position": "Professor of Theoretical Physics",
-      "url": "https://example.com",
-      "startDate": "1933-01-01",
-      "endDate": "1955-01-01",
-      "summary": "Teaching at Palmer Physical Laboratory (now 302 Frist Campus Center). While not a professor at Princeton, I associated with the physics professors and continued to give lectures on campus.",
-      "highlights": ["Relativity"]
+      "name": "Biology Department, School of Sciences, São Paulo State University",
+      "position": "Professor of Vertebrate Zoology",
+      "url": "https://labesta.org",
+      "startDate": "1933-12-01",
+      "endDate": "",
+      "summary": "",
+      "highlights"
     }
   ],
   "volunteer": [
