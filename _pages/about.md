@@ -7,7 +7,7 @@ subtitle: Laboratório de Biologia Evolutiva e Sistemática de Tetrápodes Atuai
 profile:
   name: Prof. Pedro P. G. Taucci
   align: right
-  image: prof_pic.jpg
+  image: taucci-profile.jpeg
   image_circular: false # crops the image to make it circular
   address: >
     Department of Biology<br />
