@@ -1,24 +1,28 @@
 ---
-layout: about
-title: about
+layout: Home
+title: Home
 permalink: /
-subtitle: <a href='#'>Affiliations</a>. Address. Contacts. Motto. Etc.
+subtitle: Laboratório de Biologia Evolutiva e Sistemática de Tetrápodes Atuais
 
 profile:
+  name: Prof. Pedro P. G. Taucci
   align: right
-  image: prof_pic.jpg
+  image: Taucci-profile.jpg
   image_circular: false # crops the image to make it circular
-  more_info: >
-    <p>555 your office number</p>
-    <p>123 your address street</p>
-    <p>Your City, State 12345</p>
+  address: >
+    Department of Biology<br />
+    School of Sciences<br />
+    Av. Eng. Luís Edmundo Carrijo Coube, 2085<br />
+    Bauru, SP, Brazil <br />
+    17033-360
+
 
 news: true # includes a list of news items
 selected_papers: true # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
 ---
 
-Write your biography here. Tell the world about yourself. Link to your favorite [subreddit](http://reddit.com). You can put a picture in, too. The code is already in, just name your picture `prof_pic.jpg` and put it in the `img/` folder.
+Welcome to the Laboratory of Evolutionary Biology and Systematics of Current Tetrapods! We are part of the Department of Biological Sciences at São Paulo State University (Unesp), Bauru, Brazil. Our research focuses on gathering diverse lines of evidence to explore the evolutionary biology and systematics of tetrapods, with a special emphasis on amphibians and reptiles.
 
 Put your address / P.O. box / other info right below your picture. You can also disable any of these elements by editing `profile` property of the YAML header of your `_pages/about.md`. Edit `_bibliography/papers.bib` and Jekyll will render your [publications page](/al-folio/publications/) automatically.
 
