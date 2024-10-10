@@ -5,18 +5,18 @@
 @use "sass:color";
 
 :root {
-  --global-bg-color: #{$white-color};
-  --global-code-bg-color: #{$code-bg-color-light};
-  --global-text-color: #{$black-color};
-  --global-text-color-light: #{$grey-color};
-  --global-theme-color: #{$purple-color};
-  --global-hover-color: #{$purple-color};
+  --global-bg-color: #{$white-labesta};
+  --global-code-bg-color: #{$code-bg-color-labesta-light};
+  --global-text-color: #{$green-dark-labesta};
+  --global-text-color-light: #{$green-light-labesta};
+  --global-theme-color: #{$orange-labesta};
+  --global-hover-color: #{$orange-labesta};
   --global-hover-text-color: #{$white-color};
-  --global-footer-bg-color: #{$grey-color-dark};
-  --global-footer-text-color: #{$grey-color-light};
+  --global-footer-bg-color: #{$green-dark-labesta};
+  --global-footer-text-color: #{$white-labesta};
   --global-footer-link-color: #{$white-color};
   --global-distill-app-color: #{$grey-color};
-  --global-divider-color: rgba(0, 0, 0, 0.1);
+  --global-divider-color: #{$green-light-labesta-divider};
   --global-card-bg-color: #{$white-color};
   --global-highlight-color: #{$red-color-dark};
   --global-back-to-top-bg-color: rgba(

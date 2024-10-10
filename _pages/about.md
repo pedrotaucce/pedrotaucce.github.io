@@ -1,30 +1,29 @@
 ---
 layout: about
-title: about
+title: Home
 permalink: /
 subtitle: Laboratório de Biologia Evolutiva e Sistemática de Tetrápodes Atuais
 
 profile:
   align: right
   image: taucci-profile.jpeg
-  image_circular: false # crops the image to make it circular
+  image_circular: true # crops the image to make it circular
   more_info: >
-    <p>Prof. Pedro P. G. Taucci</p>
-    <p>Head of LaBESTA</p>
-    <p>Department of Biology, School of Sciences</p>
-    <p>São Paulo State University (Unesp)</p>
+    <p><strong>Prof. Pedro P. G. Taucci</strong></p>
+    <p>Head of <strong>LaBESTA</strong></p>
+    <p>Department of Biology</p>
+    <p>School of Sciences</p>
+    <p>São Paulo State University</p>
 
 
 
 
 
 news: true # includes a list of news items
-selected_papers: true # includes a list of papers marked as "selected={true}"
+selected_papers: false # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
 ---
 
-Welcome to the Laboratory of Evolutionary Biology and Systematics of Current Tetrapods! We are part of the Department of Biological Sciences at São Paulo State University (Unesp), Bauru, Brazil. Our research focuses on gathering diverse lines of evidence to explore the evolutionary biology and systematics of tetrapods, with a special emphasis on amphibians and reptiles.
+Welcome to the Laboratory of Evolutionary Biology and Systematics of Current Tetrapods! We are part of the <a href = "https://www.fc.unesp.br/#!/biologia">Department of Biological Sciences</a> at <a href = "https://www.bauru.unesp.br">São Paulo State University (Unesp)</a>, Bauru, Brazil. Our research focuses on gathering diverse lines of evidence to explore the **evolutionary biology and systematics of tetrapods**, with a special emphasis on **amphibians** and **reptiles**.
 
-Put your address / P.O. box / other info right below your picture. You can also disable any of these elements by editing `profile` property of the YAML header of your `_pages/about.md`. Edit `_bibliography/papers.bib` and Jekyll will render your [publications page](/al-folio/publications/) automatically.
-
-Link to your social media connections, too. This theme is set up to use [Font Awesome icons](https://fontawesome.com/) and [Academicons](https://jpswalsh.github.io/academicons/), like the ones below. Add your Facebook, Twitter, LinkedIn, Google Scholar, or just disable all of them.
+Get in touch or join our group! You'll find our contact details, including social media and email, at the bottom of the page. If you're passionate about **phylogenetics**, **phylogeography**, and **biodiversity informatics**, don't miss our <a href = "/blog">blog posts</a>, where we share valuable tips and insights on these topics.

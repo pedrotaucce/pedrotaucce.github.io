@@ -4,19 +4,12 @@
 
 // Typography
 
-p,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-em,
-div,
-li,
-span,
-strong {
-  color: var(--global-text-color);
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Bricolage Grotesque', sans-serif;
+}
+
+p, em, div, li, span, strong {
+  font-family: 'Public Sans', sans-serif;
 }
 
 hr {
@@ -198,7 +191,7 @@ ul.task-list input[type="checkbox"] {
   .more-info {
     margin-bottom: 5px;
     margin-top: 5px;
-    font-family: monospace;
+    font-family: 'Bricolage Grotesque', sans-serif;
 
     p {
       display: inline-block;
