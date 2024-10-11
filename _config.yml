@@ -14,7 +14,7 @@ footer_text: >
   Hosted by <a href="https://pages.github.com/" target="_blank">GitHub Pages</a>.
 keywords: herpetology, amphibians, reptiles, systematics, phylogeography # add your own keywords or leave empty
 lang: en # the language of your site (for example: en, fr, cn, ru, etc.)
-icon:  favicon.svg # the emoji used as the favicon (alternatively, provide image name in /assets/img/)
+icon:  logos/favicon.svg # the emoji used as the favicon (alternatively, provide image name in /assets/img/)
 
 url: https://pedrotaucce.github.io # the base hostname & protocol for your site
 baseurl: # the subpath of your site, e.g. /blog/. Leave blank for root
@@ -64,7 +64,7 @@ max_width: 930px
 # see https://schema.org/docs/faq.html for more information
 serve_og_meta: true # Include Open Graph meta tags in the HTML head
 serve_schema_org: true # Include Schema.org in the HTML head
-og_image: logo_verde.png # The site-wide (default for all links) Open Graph preview image
+og_image: logos/logo_verde.png # The site-wide (default for all links) Open Graph preview image
 
 # -----------------------------------------------------------------------------
 # Social integration

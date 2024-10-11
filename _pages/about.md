@@ -2,8 +2,7 @@
 layout: about
 title: Home
 permalink: /
-subtitle: Laboratório de Biologia Evolutiva e Sistemática de Tetrápodes Atuais
-
+subtitle:
 profile:
   align: right
   image: taucci-profile.png
@@ -14,9 +13,6 @@ profile:
     <p>Department of Biology</p>
     <p>School of Sciences</p>
     <p>São Paulo State University</p>
-
-
-
 
 
 news: true # includes a list of news items

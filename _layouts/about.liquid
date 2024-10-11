@@ -4,7 +4,7 @@ layout: default
 <div class="post">
   <header class="post-header">
     <h1 class="post-title">
-   <img id="logo-img" src="/assets/img/logo_verde.png" alt="Logo" style="width: 300px; height: auto;"> <!-- Adjust the width -->
+   <img id="logo-img" src="/assets/img/logos/logo_verde_escrito_hor.png" alt="Logo" style="width: 100%; max-width: {{ site.max_width }}; height: auto;margin-bottom: 20px"> <!-- Adjust the width -->
       {% if site.title == 'blank' %}
         <span class="font-weight-bold">{{ site.first_name }}</span> {{ site.middle_name }}
         {{ site.last_name }}
@@ -88,9 +88,9 @@ layout: default
       const theme = document.documentElement.getAttribute('data-theme');
 
       if (theme === 'dark') {
-        logoImg.src = '/assets/img/logo_laranja.png'; // Logo para o tema escuro
+        logoImg.src = '/assets/img/logos/logo_laranja_escrito_hor.png'; // Logo para o tema escuro
       } else {
-        logoImg.src = '/assets/img/logo_verde.png'; // Logo para o tema claro
+        logoImg.src = '/assets/img/logos/logo_verde_escrito_hor.png'; // Logo para o tema claro
       }
     }
 
