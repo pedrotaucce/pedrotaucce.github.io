@@ -24,6 +24,7 @@ $pink-color: #f92080 !default;
 $pink-color-light: #ffdddd !default;
 $yellow-color: #efcc00 !default;
 $green-dark-labesta: #124000 !default;
+$green-dark-labesta-lighter: #274e13 !default;
 $green-light-labesta: #2f9300 !default;
 $orange-labesta: #ff692b !default;
 $yellow-labesta: #fff026 !default;
@@ -43,7 +44,7 @@ $black-color: #000000 !default;
 $code-bg-color-light: rgba($purple-color, 0.05);
 $code-bg-color-labesta-light: rgba($orange-labesta, 0.1);
 $green-light-labesta-divider: rgba($green-light-labesta, 0.5);
-$code-bg-color-dark: #2c3237 !default;
+$yellow-labesta-divider: rgba($yellow-labesta, 0.5);
 
 // Font awesome location
 $fa-font-path: "../webfonts";

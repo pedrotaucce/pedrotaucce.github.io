@@ -6,11 +6,11 @@ subtitle: Laboratório de Biologia Evolutiva e Sistemática de Tetrápodes Atuai
 
 profile:
   align: right
-  image: taucci-profile.jpeg
-  image_circular: true # crops the image to make it circular
+  image: taucci-profile.png
+  image_circular: false # crops the image to make it circular
   more_info: >
-    <p><strong>Prof. Pedro P. G. Taucci</strong></p>
-    <p>Head of <strong>LaBESTA</strong></p>
+    <p>Prof. Pedro P. G. Taucci</p>
+    <p>Lab Head</p>
     <p>Department of Biology</p>
     <p>School of Sciences</p>
     <p>São Paulo State University</p>

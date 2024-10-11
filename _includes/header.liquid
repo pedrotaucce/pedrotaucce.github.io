@@ -4,7 +4,7 @@
     <div class="container">
       {% if page.permalink != '/' %}
         <a class="navbar-brand" href="{{ site.baseurl }}/">
-          <img src="/assets/img/logo_verde.png" alt="Logo" style="width: 100px; height: auto;">
+          <img id="logo-img" src="/assets/img/logo_verde.png" alt="Logo" style="width: 100px; height: auto;">
         </a>
       {% elsif site.enable_navbar_social %}
         <!-- Social Icons -->
@@ -125,3 +125,29 @@
     </progress>
   {% endif %}
 </header>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const logoImg = document.getElementById('logo-img');
+
+    function updateLogoBasedOnTheme() {
+      const theme = document.documentElement.getAttribute('data-theme');
+
+      if (theme === 'dark') {
+        logoImg.src = '/assets/img/logo_laranja.png'; // Logo para o tema escuro
+      } else {
+        logoImg.src = '/assets/img/logo_verde.png'; // Logo para o tema claro
+      }
+    }
+
+    // Detectar quando o tema muda
+    const observer = new MutationObserver(updateLogoBasedOnTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
+
+    // Chamar a função ao carregar a página
+    updateLogoBasedOnTheme();
+  });
+</script>

@@ -1,7 +1,14 @@
 /*******************************************************************************
  * Styles for the base elements of the theme.
  ******************************************************************************/
-
+// Fonts
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+em {
+  font-style: italic;
+}
+strong {
+  font-weight: bold;
+}
 // Typography
 
 h1, h2, h3, h4, h5, h6 {
@@ -11,6 +18,7 @@ h1, h2, h3, h4, h5, h6 {
 p, em, div, li, span, strong {
   font-family: 'Public Sans', sans-serif;
 }
+
 
 hr {
   border-top: 1px solid var(--global-divider-color);
@@ -191,7 +199,8 @@ ul.task-list input[type="checkbox"] {
   .more-info {
     margin-bottom: 5px;
     margin-top: 5px;
-    font-family: 'Bricolage Grotesque', sans-serif;
+    margin-left: 30px;
+    font-family: 'Courier Prime', monospace !important;
 
     p {
       display: inline-block;
