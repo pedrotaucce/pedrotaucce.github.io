@@ -1,0 +1,5 @@
+I am a broadly trained evolutionary zoologist, currently a Professor of Vertebrate Zoology at São Paulo State University (UNESP), Bauru, Brazil.
+
+My research focuses on integrating disciplines such as bioacoustics, molecular phylogenetics, and morphology to explore the diversity and evolution of tetrapods, with a special emphasis on herpetofauna (amphibians and reptiles). I am particularly interested in the processes driving biodiversity, and more recently, the interplay between genotype and phenotype has become a central theme in my work.
+
+Starting in the first semester of 2025, I will be teaching Vertebrate Zoology and Biogeography to undergraduate students. I am also passionate about science outreach and have been part of the [Dragões de Garagem](www.dragoesdegaragem.com.br) podcast team since 2020.

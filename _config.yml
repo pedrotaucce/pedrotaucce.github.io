@@ -6,7 +6,7 @@ title: # the website title (if blank, full name will be used instead)
 first_name: Pedro
 middle_name: P. G.
 last_name: Taucci
-email: pedrotaucce@gmail.com
+email: pedro.taucci@unesp.br
 description: > # the ">" symbol means to ignore newlines until "footer_text:"
   Website of the Laboratório de Biologia Evolutiva e Sistemática de Tetrápodes Atuais (Laboratory of Evolutionary Biology and Systematics of Current Tetrapoda) at São Paulo State University.
 footer_text: >
@@ -196,6 +196,9 @@ collections:
   projects:
     output: true
     permalink: /:collection/:title/
+  teaching:
+    output: true
+    permalink: /:collection/:path/
 
 announcements:
   enabled: true
@@ -434,6 +437,7 @@ enable_tooltips: false # enables automatic tooltip links generated for each sect
 enable_darkmode: true # enables switching between light/dark modes
 enable_navbar_social: false # enables displaying social links in the navbar on the about page
 enable_project_categories: true # enables categorization of projects into multiple categories
+enable_course_categories: true # enables categorization of courses into multiple categories
 enable_medium_zoom: true # enables image zoom feature (as on medium.com)
 enable_progressbar: true # enables a horizontal progress bar linked to the vertical scroll position
 enable_video_embedding: false # enables video embedding for bibtex entries. If false, the button opens the video link in a new window.

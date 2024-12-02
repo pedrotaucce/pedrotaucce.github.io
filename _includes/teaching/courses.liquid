@@ -1,0 +1,26 @@
+<div class="col">
+  <a href="{{ course.url | relative_url }}">
+    <div class="card h-100 hoverable">
+      {% if course.img %}
+        {%
+          include figure.liquid
+          loading="eager"
+          path=course.img
+          sizes="250px"
+          alt="course thumbnail"
+          class="card-img-top"
+        %}
+      {% endif %}
+      <div class="card-body">
+        <h2 class="card-title">{{ course.title }}</h2>
+        <p class="card-text">{{ course.description }}</p>
+        <p class="card-text"><small class="text-muted">{{ course.institution }}</small></p>
+        
+        <!-- Seção de ícones, pode ser adicionada para ficar consistente com projetos -->
+        <div class="row ml-1 mr-1 p-0">
+          <!-- Espaço para ícones ou conteúdo extra, como em projects -->
+        </div>
+      </div>
+    </div>
+  </a>
+</div>

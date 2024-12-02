@@ -1,11 +1,11 @@
 ---
 layout: page
-title: projects
+title: Projects
 permalink: /projects/
-description: A growing collection of your cool projects.
+description: Explore our collection of research initiatives and science communication projects.
 nav: true
 nav_order: 3
-display_categories: [work, fun]
+display_categories: [Research, Outreach]
 horizontal: false
 ---
 

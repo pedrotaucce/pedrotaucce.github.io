@@ -656,6 +656,56 @@ footer.sticky-bottom {
   }
 }
 
+// Teaching
+
+.teaching {
+  a {
+    text-decoration: none;
+
+    &:hover {
+      .card-title {
+        color: var(--global-theme-color);
+      }
+    }
+  }
+
+  .card {
+    img {
+      width: 100%;
+    }
+  }
+
+  .col {
+    padding-bottom: 1rem;
+  }
+
+  .grid-sizer,
+  .grid-item {
+    width: 250px;
+    margin-bottom: 10px;
+  }
+
+  h2.category {
+    color: var(--global-divider-color); /* Cor verde */
+    border-bottom: 1px solid var(--global-divider-color); /* Linha entre categorias */
+    padding-top: 0.5rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    text-align: right; /* Alinhamento à direita */
+  }
+}
+
+// Teaching Categories
+
+.teaching h2.category {
+  color: var(--global-divider-color); /* Cor verde */
+  border-bottom: 1px solid var(--global-divider-color); /* Linha entre categorias */
+  padding-top: 0.5rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  text-align: right; /* Alinhamento à direita */
+}
+
 // Publications
 
 .publications {
