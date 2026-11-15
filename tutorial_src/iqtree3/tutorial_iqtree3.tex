@@ -1,0 +1,296 @@
+% =====================================================================
+%  Árvore de máxima verossimilhança com o IQ-TREE 3
+%  Prática 5 -- Disciplina Métodos Computacionais (UNESP)
+%
+%  Compilar com pdfLaTeX (Overleaf: Menu > Compiler > pdfLaTeX).
+%
+%  VERSÃO: por padrão gera a versão do ALUNO (sem respostas).
+%  Para a versão do PROFESSOR (com gabarito), troque \professorfalse
+%  por \professortrue na linha indicada abaixo, ou compile com
+%     pdflatex "\def\versaoprofessor{}\input{apostila_iqtree.tex}"
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\newif\ifprofessor
+\professorfalse            % <-- troque para \professortrue para incluir o gabarito
+\ifdefined\versaoprofessor \professortrue \fi
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage[provide=*,brazilian]{babel}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{fancyvrb}
+\usepackage{upquote}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{comment}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\fvset{xleftmargin=1.5em,fontsize=\small}
+\setlist{itemsep=0.2em,topsep=0.4em}
+\setlength{\parskip}{0.35em}
+\setlength{\emergencystretch}{3em}
+\urlstyle{tt}
+
+\newcommand{\arq}[1]{\path{#1}}
+\newcommand{\ui}[1]{\textit{#1}}
+\newcommand{\tecla}[1]{\textsf{#1}}
+
+\ifprofessor
+  \specialcomment{resposta}{\begin{quote}\small\textbf{Gabarito.}\ }{\end{quote}}
+\else
+  \excludecomment{resposta}
+\fi
+
+\title{Árvore de máxima verossimilhança com o IQ-TREE 3\\[0.3em]
+\large Prática 5: análise particionada no terminal}
+\author{Disciplina Métodos Computacionais\\Universidade Estadual Paulista (UNESP)}
+\date{\ifprofessor Versão do professor (com gabarito)\else Versão do aluno\fi\\ Novembro de 2026}
+
+\begin{document}
+\maketitle
+
+\paragraph{Origem do material.} Esta apostila adapta o tutorial \emph{Construindo uma árvore
+de máxima verossimilhança com o software IQ-TREE3}
+(\url{https://labesta.org/blog/2025/maximum_likelihood_tree/}) para o terminal do Ubuntu
+(WSL) e do macOS, usando a matriz de Hylodidae da Prática~4 dividida em partições. As mudanças
+estão no Apêndice~\ref{ap:mudancas}.
+
+\paragraph{Arquivos.} A pasta \arq{pratica_iqtree} contém a matriz concatenada
+\arq{hylodidae_concatenado.fasta} e o arquivo \arq{particoes.txt}, os mesmos que você gerou na
+Prática~4. Se preferir, substitua-os pelos seus (pasta \arq{matriz} da Prática~4).
+
+% =====================================================================
+\section{Máxima verossimilhança, partições e grupo externo}
+% =====================================================================
+
+Na \textbf{máxima verossimilhança}, cada árvore possível recebe uma nota: a probabilidade de
+observarmos o nosso alinhamento se aquela árvore, com aqueles comprimentos de ramo, fosse a
+verdadeira. A árvore escolhida é a de maior verossimilhança. Para calcular essa probabilidade, é
+preciso um \textbf{modelo de substituição de nucleotídeos}, que descreve como as bases mudam ao
+longo do tempo. O IQ-TREE 3 \cite{wong2026} escolhe o modelo automaticamente com o ModelFinder
+\cite{kalyaanamoorthy2017} e, logo em seguida, procura a melhor árvore. O apoio a cada clado é
+medido pelo \emph{bootstrap} ultrarrápido \cite{hoang2018}.
+
+Nossos dois marcadores não evoluem do mesmo jeito, por isso vamos dividir a matriz em
+\textbf{partições}, cada uma com o seu próprio modelo:
+\begin{itemize}
+\item o 16S, um gene de RNA ribossomal;
+\item a 1ª, a 2ª e a 3ª posições dos códons do COI, separadas porque mudanças na 3ª posição
+muitas vezes não alteram o aminoácido e se acumulam bem mais depressa que nas outras.
+\end{itemize}
+Separar as posições só é possível porque o alinhamento do COI começa na posição~1 do códon,
+como você conferiu no MEGA na Prática~4.
+
+Por fim, a árvore de máxima verossimilhança não tem raiz. Para enraizá-la, indicamos um
+\textbf{grupo externo}: \emph{Limnomedusa macroglossa}, que não pertence a Hylodidae.
+
+% =====================================================================
+\section{Instalação}
+% =====================================================================
+
+Vamos baixar o IQ-TREE 3 (versão 3.1.4) direto do GitHub pelo terminal e descompactá-lo na
+sua pasta pessoal (\verb|~|). Escolha os comandos do seu sistema.
+
+\paragraph{Windows (Ubuntu no WSL).}
+\begin{Verbatim}[fontsize=\footnotesize,xleftmargin=0pt]
+$ cd ~
+$ curl -LO \
+  https://github.com/iqtree/iqtree3/releases/download/v3.1.4/iqtree-3.1.4-Linux-intel.tar.gz
+$ tar -xzf iqtree-3.1.4-Linux-intel.tar.gz
+\end{Verbatim}
+
+\paragraph{macOS.}
+\begin{Verbatim}[fontsize=\footnotesize,xleftmargin=0pt]
+$ cd ~
+$ curl -LO \
+  https://github.com/iqtree/iqtree3/releases/download/v3.1.4/iqtree-3.1.4-macOS.zip
+$ unzip iqtree-3.1.4-macOS.zip
+\end{Verbatim}
+
+O \verb|curl -LO| baixa o arquivo do endereço indicado, e o \verb|tar -xzf| (ou o
+\verb|unzip|) o descompacta. Agora existe, na sua pasta pessoal, a pasta
+\arq{iqtree-3.1.4-Linux-intel} (ou \arq{iqtree-3.1.4-macOS}), com o programa dentro de
+\arq{bin}.
+
+% =====================================================================
+\section{Preparando a pasta de trabalho}
+% =====================================================================
+
+Como no tutorial original, o programa e os dados ficarão na mesma pasta. Vá até a pasta
+\arq{pratica_iqtree} (veja a Prática~4: no Windows, ela fica dentro de \arq{/mnt/c/Users/...};
+no macOS, digite \verb|cd|, um espaço, e arraste a pasta para o Terminal) e copie o programa
+para ela. O ponto no fim do comando significa ``para a pasta atual'':
+\begin{Verbatim}
+$ cp ~/iqtree-3.1.4-Linux-intel/bin/iqtree3 .
+\end{Verbatim}
+No macOS, o caminho é \verb|~/iqtree-3.1.4-macOS/bin/iqtree3|. Confira:
+\begin{Verbatim}
+$ ./iqtree3 --version
+\end{Verbatim}
+A primeira linha da resposta deve mostrar a versão: \verb|IQ-TREE version 3.1.4|. O \verb|./|
+diz ao terminal que o programa está na pasta atual.
+
+% =====================================================================
+\section{O arquivo de partições}
+% =====================================================================
+
+Abra o \arq{particoes.txt} da Prática~4 no Sublime Text ou no Notepad++. Ele diz quais
+colunas da matriz são do 16S e quais são do COI. Com o MAFFT v7.471, por exemplo:
+\begin{Verbatim}
+DNA, 16S = 1-2475
+DNA, COI = 2476-3187
+\end{Verbatim}
+Crie no editor um arquivo novo, escreva o texto abaixo e salve-o na pasta
+\arq{pratica_iqtree} com o nome \arq{particoes.nex}:
+\begin{Verbatim}
+#nexus
+begin sets;
+  charset p16S     = 1-2475;
+  charset COI_pos1 = 2476-3187\3;
+  charset COI_pos2 = 2477-3187\3;
+  charset COI_pos3 = 2478-3187\3;
+end;
+\end{Verbatim}
+Cada \verb|charset| dá um nome a um conjunto de colunas. O \verb|\3| significa ``de 3 em 3'':
+\verb|2476-3187\3| são as colunas 2476, 2479, 2482\ldots, ou seja, todas as 1ª posições dos
+códons do COI; começando em 2477 temos as 2ª posições e, em 2478, as 3ª. O nome \verb|p16S|
+começa com uma letra porque, no formato NEXUS, um nome não pode começar com número.
+
+\textbf{Se os números do seu \arq{particoes.txt} forem outros}, use os seus: o 16S vai de 1
+até o último número dele, e as três partições do COI começam no primeiro número do COI, no
+seguinte e no outro, todas terminando no último número do COI. Não esqueça os pontos e
+vírgulas.
+
+% =====================================================================
+\section{Rodando a análise}
+% =====================================================================
+
+Na pasta \arq{pratica_iqtree}, digite:
+\begin{Verbatim}
+$ ./iqtree3 -s hylodidae_concatenado.fasta -p particoes.nex \
+      -o Limnomedusa_macroglossa -B 1000 --prefix hylodidae
+\end{Verbatim}
+Como na Prática~4, a barra invertida indica que o comando continua na linha de baixo. Por
+partes:
+\begin{itemize}
+\item \verb|-s hylodidae_concatenado.fasta|: o alinhamento;
+\item \verb|-p particoes.nex|: as partições. O IQ-TREE escolhe um modelo para cada uma e
+estima uma única árvore para todas;
+\item \verb|-o Limnomedusa_macroglossa|: o grupo externo, escrito exatamente como na matriz;
+\item \verb|-B 1000|: \emph{bootstrap} ultrarrápido com 1000 réplicas;
+\item \verb|--prefix hylodidae|: o começo do nome de todos os arquivos de resultado.
+\end{itemize}
+A análise leva poucos segundos (cerca de 12~s em um computador comum). Enquanto ela roda,
+aparecem várias mensagens; algumas começam com \verb|WARNING| (por exemplo, sobre sequências
+com muitos dados faltantes) e, nesta prática, podem ser ignoradas. No Ubuntu, também aparece no
+início a mensagem \verb|libarcher.so: cannot open shared object file|, que não atrapalha
+nada. A análise terminou quando
+aparecer a lista de arquivos de resultado e o \emph{prompt} voltar.
+
+% =====================================================================
+\section{Os resultados}
+% =====================================================================
+
+O IQ-TREE cria vários arquivos começando com \arq{hylodidae}. Os três principais são:
+\begin{itemize}
+\item \arq{hylodidae.treefile}: a árvore de máxima verossimilhança, com os valores de
+\emph{bootstrap} nos nós, no formato Newick;
+\item \arq{hylodidae.iqtree}: o relatório da análise, em texto. Na seção \verb|ModelFinder|,
+a linha \verb|Best-fit model according to BIC| traz o modelo escolhido para cada partição;
+\item \arq{hylodidae.log}: tudo o que apareceu na tela durante a análise.
+\end{itemize}
+
+\paragraph{Vendo a árvore.} Use o FigTree (\url{https://github.com/rambaut/figtree/releases};
+no Windows, ele precisa do Java instalado). No Windows, o FigTree é um programa comum, fora do
+Ubuntu, e enxerga a pasta \arq{pratica_iqtree} normalmente.
+\begin{enumerate}
+\item Abra o arquivo \arq{hylodidae.treefile} (\ui{File > Open}). Quando o FigTree pedir um
+nome para os rótulos dos nós, digite \verb|bootstrap| e clique em \ui{OK}.
+\item Clique no ramo de \emph{Limnomedusa macroglossa} e no botão \ui{Reroot}, para que o
+grupo externo fique de um lado da raiz e Hylodidae do outro.
+\item No painel da esquerda, marque \ui{Node Labels} e, em \ui{Display}, escolha
+\ui{bootstrap}.
+\end{enumerate}
+Compare a sua árvore com a de um colega: os valores de \emph{bootstrap} podem diferir um
+pouco, porque as réplicas são sorteadas.
+
+% =====================================================================
+\section*{Perguntas}
+\addcontentsline{toc}{section}{Perguntas}
+% =====================================================================
+
+\begin{enumerate}
+\item Qual modelo foi escolhido para cada uma das quatro partições?
+\item Os gêneros \emph{Crossodactylus}, \emph{Hylodes} e \emph{Phantasmarana} saíram
+monofiléticos? Com que valor de \emph{bootstrap}?
+\end{enumerate}
+
+\begin{resposta}
+1. Pelo BIC: \verb|p16S| GTR+F+I+G4; \verb|COI_pos1| TN+I+G4; \verb|COI_pos2| F81+F;
+\verb|COI_pos3| TN+F+G4. A 2ª posição do COI não tem nenhum sítio variável (o IQ-TREE avisa:
+\verb|No variant sites in partition COI_pos2|), por isso recebe o modelo mais simples.
+2. Sim, os três. \emph{Crossodactylus}: 100; \emph{Hylodes}: 85--87; \emph{Phantasmarana}:
+99--100 (faixas obtidas em seis execuções). \emph{Megaelosia goeldii}, a única espécie do
+gênero, aparece como grupo-irmão de \emph{Phantasmarana} (70--77), e
+\emph{Hylodes}~+~\emph{Megaelosia}~+~\emph{Phantasmarana} tem 99--100.
+\end{resposta}
+
+% =====================================================================
+\appendix
+\section{Problemas comuns}\label{ap:problemas}
+% =====================================================================
+
+\begin{description}[style=nextline,leftmargin=1.5em]
+\item[\texttt{iqtree3: command not found}] Faltou o \verb|./| antes do nome, ou o programa
+não foi copiado para a pasta atual (confira com \verb|ls|).
+\item[macOS: o sistema diz que não pode verificar o desenvolvedor] Acontece quando o
+programa é baixado pelo navegador, e não pelo \verb|curl|. Rode
+\verb|xattr -d com.apple.quarantine iqtree3| na pasta \arq{pratica_iqtree}, ou libere o
+programa em \ui{Ajustes do Sistema > Privacidade e Segurança}.
+\item[\texttt{ERROR: Too large site ID}] Algum número do \arq{particoes.nex} é maior que o
+número de colunas da matriz. Confira os números com o seu \arq{particoes.txt}.
+\item[\texttt{ERROR: Alignment does not have specified outgroup taxon}] O nome depois do
+\verb|-o| está diferente do nome na matriz.
+\item[O IQ-TREE não encontra \texttt{particoes.nex}] No Windows, o editor pode ter salvo o
+arquivo como \arq{particoes.nex.txt}. Confira com \verb|ls| e, se for o caso, renomeie com
+\verb|mv particoes.nex.txt particoes.nex|.
+\item[\texttt{Use -redo option if you really want to redo the analysis}] Já existe uma
+análise com o mesmo \verb|--prefix|. Acrescente \verb|-redo| ao comando para refazê-la, ou use
+outro prefixo.
+\end{description}
+
+% =====================================================================
+\section{Alterações em relação à versão anterior}\label{ap:mudancas}
+% =====================================================================
+
+\begin{enumerate}
+\item \textbf{Terminal.} O \arq{iqtree3-click.exe} do Windows, em que as opções eram digitadas
+uma a uma (\verb|-s|, \verb|e|, o arquivo, \verb|e|, \verb|-B|\ldots), foi substituído por um
+único comando no terminal do Ubuntu (WSL) ou do macOS, com o IQ-TREE 3.1.4 baixado pelo
+próprio terminal.
+\item \textbf{Dados.} No lugar do 16S de \emph{Pristimantis rupicola}, é usada a matriz
+concatenada de Hylodidae (16S + COI) da Prática~4.
+\item \textbf{Partições e grupo externo.} Incluídos o arquivo de partições (16S e as três
+posições do códon do COI) e o grupo externo (\emph{Limnomedusa macroglossa}).
+\item \textbf{Revisão.} Correção do endereço do IQ-TREE (``\texttt{https://https://}'') e da
+menção ao IQ-TREE2; explicação dos arquivos de resultado e duas perguntas.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem{hoang2018} Hoang, D.~T., Chernomor, O., von Haeseler, A., Minh, B.~Q. \& Vinh,
+L.~S. 2018. UFBoot2: improving the ultrafast bootstrap approximation. \emph{Molecular Biology
+and Evolution} 35(2): 518--522.
+\bibitem{kalyaanamoorthy2017} Kalyaanamoorthy, S., Minh, B.~Q., Wong, T.~K.~F., von Haeseler,
+A. \& Jermiin, L.~S. 2017. ModelFinder: fast model selection for accurate phylogenetic
+estimates. \emph{Nature Methods} 14: 587--589.
+\bibitem{wong2026} Wong, T.~K.~F., Ly-Trong, N., Ren, H., Demotte, P., Banos, H., Roger,
+A.~J., Susko, E., Bielow, C., De~Maio, N., Goldman, N., Hahn, M.~W., dos~Reis, M., Vinh,
+L.~S., Huttley, G., Lanfear, R. \& Minh, B.~Q. 2026. IQ-TREE 3: phylogenomic inference
+software using complex evolutionary models. \emph{Molecular Biology and Evolution}, msag117.
+\end{thebibliography}
+
+\end{document}
