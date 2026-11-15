@@ -8,3 +8,5 @@ category: Graduate
 ---
 
 <h2 style="color: #ff692b;"><em>Ementa em breve</em></h2>
+
+Os [tutoriais práticos da disciplina]({{ '/tutorials/' | relative_url }}) estão disponíveis no site.

@@ -197,6 +197,9 @@ collections:
   teaching:
     output: true
     permalink: /:collection/:path/
+  tutorials:
+    output: true
+    permalink: /:collection/:path/
 
 announcements:
   enabled: true
