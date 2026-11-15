@@ -1,13 +1,13 @@
 % =====================================================================
-%  Aquisição de sequências no GenBank
-%  Prática 3 -- Disciplina Métodos Computacionais (UNESP)
+%  Alinhamento múltiplo de sequências
+%  Prática 4 -- Disciplina Métodos Computacionais (UNESP)
 %
 %  Compilar com pdfLaTeX (Overleaf: Menu > Compiler > pdfLaTeX).
 %
 %  VERSÃO: por padrão gera a versão do ALUNO (sem respostas).
 %  Para a versão do PROFESSOR (com gabarito), troque \professorfalse
 %  por \professortrue na linha indicada abaixo, ou compile com
-%     pdflatex "\def\versaoprofessor{}\input{apostila_genbank.tex}"
+%     pdflatex "\def\versaoprofessor{}\input{apostila_alinhamento.tex}"
 % =====================================================================
 \documentclass[11pt,a4paper]{article}
 
@@ -47,8 +47,8 @@
   \excludecomment{resposta}
 \fi
 
-\title{Aquisição de sequências no GenBank\\[0.3em]
-\large Prática 3: BLAST, buscas no site e download de sequências com o R}
+\title{Alinhamento múltiplo de sequências\\[0.3em]
+\large Prática 4: MUSCLE no MEGA, MAFFT no terminal e concatenação no R}
 \author{Disciplina Métodos Computacionais\\Universidade Estadual Paulista (UNESP)}
 \date{\ifprofessor Versão do professor (com gabarito)\else Versão do aluno\fi\\ Novembro de 2026}
 
@@ -56,344 +56,319 @@
 \maketitle
 
 \paragraph{Origem do material.} Esta apostila é uma versão revisada do tutorial
-\emph{Aquisição de sequências no GenBank}, publicado em
-\url{https://pedrotaucce.github.io/filogenia/}. A sequência das atividades é a mesma; os
-códigos em R foram atualizados, e a taxonomia de Hylodidae foi revista para incluir o gênero
-\emph{Phantasmarana}. As mudanças estão listadas no Apêndice~\ref{ap:mudancas}.
+\emph{Alinhamento}, publicado em \url{https://pedrotaucce.github.io/filogenia/}. O alinhamento
+com o MAFFT passou a ser feito no terminal, os dois marcadores são alinhados de uma só vez com
+um laço, e a prática termina com a concatenação dos dois alinhamentos no R. As mudanças estão
+listadas no Apêndice~\ref{ap:mudancas}.
 
-\paragraph{Arquivos.} A pasta da prática contém:
+\paragraph{Arquivos.} A pasta \arq{pratica_alinhamento} contém:
 \begin{itemize}
-\item \arq{dados/panthera_onca.fas}: a sequência usada no BLAST (Seção~\ref{sec:blast});
-\item \arq{R/}: os scripts \arq{01_preparar_R.R}, \arq{02_baixar_por_nome.R} e
-\arq{03_baixar_por_acesso.R}, com todos os comandos desta apostila;
-\item \arq{referencia/}: as sequências da Seção~\ref{sec:acesso}, como foram baixadas em 2021,
-para usar caso o NCBI esteja inacessível durante a aula.
+\item \arq{sequencias/16S_ids.fasta} e \arq{sequencias/COI_ids.fasta}: as matrizes baixadas
+por número de acesso na Prática~3 (22 sequências de 16S e 14 de COI), com nomes no formato
+\verb|Genero_especie_acesso|. Se preferir, substitua-as pelos arquivos que você mesmo baixou;
+\item \arq{R/04_concatenar.R}: o script da Seção~\ref{sec:concatenar}.
 \end{itemize}
 
 \tableofcontents
 
 % =====================================================================
-\section{O que é o GenBank?}
+\section{Alinhamento e homologia primária}
 % =====================================================================
 
-O GenBank (\url{https://www.ncbi.nlm.nih.gov/genbank/}), mantido pelo NCBI (\emph{National
-Center for Biotechnology Information}, EUA), é a base de dados que reúne as sequências de DNA
-disponíveis publicamente. Ele faz parte de um consórcio internacional (INSDC) com o ENA,
-europeu, e o DDBJ, japonês: as três bases trocam dados diariamente e compartilham os mesmos
-registros e números de acesso.
+Apesar de muitos sistematas darem pouca importância ao alinhamento e o tratarem apenas como
+parte do processo para a obtenção de uma árvore filogenética, esta etapa é extremamente
+importante para a análise filogenética como um todo, pois é nela que definimos a
+\textbf{hipótese de homologia primária} entre as nossas sequências. Em outras palavras, nesta
+etapa assumimos que as bases alinhadas em uma mesma coluna \textbf{divergiram de um mesmo
+estado ancestral}.
 
-Quando você elabora um trabalho com sequências de DNA, provavelmente visitará o GenBank para
-adquirir sequências antes de começar as análises e, depois, para depositar as sequências que
-produziu: o depósito em um repositório público é exigido para a publicação de artigos. Cada
-registro recebe um \textbf{número de acesso} (por exemplo, \texttt{KJ961566}) e uma versão
-(\texttt{KJ961566.1}), que identificam a sequência de modo permanente.
+Sendo esta uma etapa tão importante, existem vários programas e algoritmos comumente
+utilizados para alinhar sequências de DNA (e também de aminoácidos, que não abordaremos no
+curso), como o ClustalW \cite{larkin2007}, o T-Coffee \cite{notredame2000}, o MUSCLE
+\cite{edgar2004} e o MAFFT \cite{katoh2013}. Nesta prática usaremos os dois últimos.
 
-Uma ferramenta muito útil associada ao GenBank é o \textbf{BLAST} (\emph{Basic Local Alignment
-Search Tool}), que compara uma sequência com as sequências da base do NCBI e lista as mais
-parecidas. Ele serve, por exemplo, para verificar se uma sequência recém-produzida é de fato do
-organismo esperado ou se está contaminada.
+Continuamos o trabalho com a filogenia de Hylodidae da Prática~3. Agora que você adquiriu as
+sequências de 16S rRNA e COI no GenBank, precisa alinhá-las. Usaremos as matrizes baixadas
+por número de acesso, menores e mais controladas, com um exemplar por espécie. Elas incluem
+\emph{Limnomedusa macroglossa} (Alsodidae), que servirá como raiz da árvore nas próximas
+análises.
 
 % =====================================================================
-\section{Usando o BLAST}\label{sec:blast}
+\section{MUSCLE no MEGA 12}\label{sec:mega}
 % =====================================================================
 
+O MEGA \cite{kumar2024} traz o MUSCLE embutido. Vamos usá-lo para alinhar o COI:
 \begin{enumerate}
-\item Abra o arquivo \arq{dados/panthera_onca.fas} em um editor de texto (Bloco de Notas,
-Sublime Text, Notepad++). Ele contém uma sequência parcial do gene mitocondrial 16S rRNA
-identificada como de onça-pintada (\emph{Panthera onca}) do Pantanal.
-\item Acesse o BLAST de nucleotídeos:
-\url{https://blast.ncbi.nlm.nih.gov/Blast.cgi?PROGRAM=blastn}.
-\item Copie a sequência inteira, incluindo a linha de cabeçalho (\verb|>|), e cole-a no campo
-\ui{Enter accession number(s), gi(s), or FASTA sequence(s)}. Outra possibilidade é enviar o
-arquivo inteiro pelo botão \ui{Escolher arquivo} (\ui{Or, upload file}).
-\item Em \ui{Choose Search Set}, mantenha a base padrão, \ui{Core nucleotide database
-(core\_nt)}; em \ui{Program Selection}, mantenha \ui{Highly similar sequences (megablast)}.
-\item Clique no botão \ui{BLAST} e aguarde (de alguns segundos a alguns minutos).
+\item No MEGA 12, vá em \ui{Align > Edit/Build Alignment}, escolha \ui{Retrieve sequences
+from a file} e abra \arq{sequencias/COI_ids.fasta}. Está tudo desalinhado.
+\item Selecione todas as sequências (\ui{Edit > Select All}, ou \tecla{Ctrl+A}) e vá em
+\ui{Alignment > Align by MUSCLE}. Se o MEGA oferecer as opções \ui{DNA} e \ui{Codons},
+escolha \ui{DNA}.
+\item Na janela de parâmetros do MUSCLE, mantenha os valores padrão e clique em \ui{Compute}.
+Aguarde um pouquinho e pronto: as sequências estão alinhadas.
 \end{enumerate}
 
-Os resultados aparecem na aba \ui{Descriptions}, ordenados da sequência mais parecida para a
-menos parecida. As colunas mais importantes são:
-\begin{itemize}
-\item \ui{Scientific Name}: o organismo da sequência encontrada;
-\item \ui{Query Cover}: a porcentagem da sua sequência que foi alinhada;
-\item \ui{Per. Ident}: a porcentagem de bases idênticas no trecho alinhado;
-\item \ui{E value}: o número de resultados com essa qualidade esperados ao acaso (quanto menor,
-melhor; valores como \texttt{0.0} ou \texttt{1e-150} indicam semelhança que não se explica
-pelo acaso);
-\item \ui{Accession}: o número de acesso da sequência encontrada.
-\end{itemize}
+O COI é um gene codificante, então é interessante verificar se as sequências estão corretas:
+se começam no códon certo e se os possíveis \emph{gaps} são múltiplos de três, por exemplo.
+Isso influenciará etapas posteriores, por isso é interessante que o alinhamento comece sempre
+na posição~1 do códon. A tradução também serve para checar se há \emph{stop codons} no meio
+das sequências, o que poderia indicar que você sequenciou um pseudogene ou o gene errado.
 
-\paragraph{Para refletir.} Qual foi a sequência mais próxima da nossa? Se você tivesse acabado
-de produzir esta sequência, o que isto poderia significar?
+\begin{enumerate}[resume]
+\item Clique na aba \ui{Translated Protein Sequences}. Quando aparecer a pergunta
+\ui{The Current Genetic Code is: Standard. Is this correct?}, clique em \ui{No}.
+\item Na janela seguinte, como se trata de um fragmento mitocondrial de anfíbios, marque
+\ui{Vertebrate Mitochondrial} e confirme.
+\item Verifique se há \emph{stop codons} (indicados pelo símbolo \texttt{*}) em alguma
+posição. Se houver, provavelmente o alinhamento não começa na posição~1 do códon, ou o gene
+sequenciado não é o que você queria.
+\end{enumerate}
 
 \begin{resposta}
-Observe a espécie do primeiro resultado e os valores de \ui{Query Cover} e \ui{Per. Ident}.
-Se o primeiro resultado for \emph{Panthera onca} com identidade próxima de 100\%, a
-identificação está confirmada. Se for outro organismo (por exemplo, \emph{Homo sapiens}), a
-sequência provavelmente resulta de contaminação, e não do animal amostrado; se for outra
-espécie do mesmo gênero com identidade alta, pode haver erro de identificação da amostra ou
-apenas falta de sequências da espécie na base. O resultado depende do conteúdo atual da base:
-rode a busca antes da aula para conferir. Discuta também que o BLAST indica semelhança, não
-identidade taxonômica: a identificação das sequências da base depende de quem as depositou.
+Alinhamento com cerca de 712 colunas (712 com o MUSCLE 3.8.31), sem \emph{gaps} internos:
+as sequências só diferem no início e no fim. Traduzido com o código mitocondrial de
+vertebrados a partir da coluna~1, \textbf{não há nenhum \texttt{*}}. Se os alunos olharem a
+aba de proteínas \emph{antes} de alinhar, verão \texttt{*} em 10 das 14 sequências, porque
+cada uma começa em uma posição diferente do códon; só \emph{C.~caramaschii}, \emph{H.~ornatus},
+\emph{H.~sazimai} e \emph{P.~boticariana} começam na posição~1. Com o código \ui{Standard},
+aparecem \texttt{*} mesmo no alinhamento, porque \texttt{TGA} codifica triptofano no código
+mitocondrial de vertebrados.
 \end{resposta}
 
 % =====================================================================
-\section{Buscando sequências no site do GenBank}
+\section{MAFFT no terminal}\label{sec:mafft}
 % =====================================================================
 
-Se todas as sequências de DNA públicas estão no GenBank, é lá que procuramos quando precisamos
-de alguma. Acesse \url{https://www.ncbi.nlm.nih.gov/nuccore/} e busque pela sequência de algum
-organismo e de um fragmento. Se estiver sem ideia, vejamos as sequências do marcador
-mitocondrial 16S rRNA da rã-de-unhas-africana (\emph{Xenopus laevis}). Digite no campo de busca:
-\begin{Verbatim}
-Xenopus laevis 16S
-\end{Verbatim}
-e clique em \ui{Search}. A página mostra as sequências de \emph{X. laevis} que mencionam o
-marcador: são centenas. Repare nos filtros da coluna da esquerda (por exemplo, \ui{Sequence
-length}) e no quadro \ui{Search details}, à direita, que mostra como o NCBI interpretou a sua
-busca, com \emph{campos} entre colchetes, como \verb|[Organism]|. Os mesmos campos podem ser
-usados diretamente:
-\begin{Verbatim}
-Xenopus laevis[Organism] AND 16S[All Fields] AND 100:5000[SLEN]
-\end{Verbatim}
-\verb|[SLEN]| é o comprimento da sequência; aqui, de 100 a 5000 pares de bases, o que exclui os
-genomas mitocondriais completos (cerca de 17 mil pares de bases).
-
-Baixar centenas de sequências clicando uma a uma daria um trabalho danado! Por isso, foram
-criados pacotes para a plataforma R que interagem com o GenBank.
-
-Vamos supor que você encontrou uma espécie nova de rã que parece ser do gênero \emph{Hylodes} e
-quer fazer uma árvore com dois marcadores mitocondriais, 16S rRNA e COI (citocromo c oxidase
-subunidade I), da família Hylodidae, para posicionar a nova espécie. Baixar no clique todas as
-sequências disponíveis para a família seria trabalhoso; vamos fazer isso no R.
-
-% =====================================================================
-\section{Um parêntese taxonômico: \emph{Megaelosia} e \emph{Phantasmarana}}\label{sec:taxonomia}
-% =====================================================================
-
-Até 2021, a família Hylodidae era dividida em três gêneros: \emph{Crossodactylus},
-\emph{Hylodes} e \emph{Megaelosia}. Vittorazzi et al.\ \cite{vittorazzi2021} mostraram que
-\emph{Megaelosia} não era monofilético e descreveram o gênero \emph{Phantasmarana} (``rãs
-fantasma'', pela raridade com que são encontradas). Desde então, \emph{Megaelosia} contém uma
-única espécie, \emph{M. goeldii}, e as demais foram transferidas para \emph{Phantasmarana}, que
-hoje tem oito espécies \cite{asw}, duas delas descritas depois da criação do gênero
-\cite{desa2022}:
+O MAFFT é um programa um pouco mais completo que o MUSCLE, por ter vários algoritmos
+diferentes (\emph{estratégias}) para alinhar as sequências. Alguns são mais rápidos e menos
+precisos, ideais para um grande número de sequências ou para fragmentos codificantes, sem
+estrutura secundária; outros são mais precisos e mais lentos, ideais, por exemplo, para
+fragmentos com estrutura secundária, como o 16S. Por serem mais lentos, estes últimos não podem
+ser utilizados em grandes conjuntos de sequências. As duas estratégias que usaremos são:
 
 \begin{center}
-\begin{tabular}{@{}ll@{}}
+\begin{tabular}{@{}lll@{}}
 \toprule
-\emph{Megaelosia} & \emph{Phantasmarana} \\
+Estratégia & Opções no comando & Uso nesta prática \\
 \midrule
-\emph{M. goeldii} (Baumann, 1912) & \emph{P. apuana} (Pombal, Prado, and Canedo, 2003) \\
- & \emph{P. bocainensis} (Giaretta, Bokermann, and Haddad, 1993) \\
- & \emph{P. boticariana} (Giaretta and Aguiar, 1998) \\
- & \emph{P. curucutuensis} de Sá et al., 2022 \\
- & \emph{P. jordanensis} (Heyer, 1983) \\
- & \emph{P. lutzae} (Izecksohn and Gouvêa, 1987) \\
- & \emph{P. massarti} (De Witte, 1930) \\
- & \emph{P. tamuia} de Sá et al., 2022 \\
+FFT-NS-2 (rápida, padrão) & \verb|--retree 2| & COI \\
+E-INS-i (precisa, lenta) & \verb|--genafpair --maxiterate 1000| & 16S \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Isso afeta a busca de sequências de duas maneiras:
-\begin{enumerate}
-\item A família passa a ter quatro gêneros, e \emph{Phantasmarana} precisa estar na busca.
-\item As sequências depositadas antes de 2021 foram descritas como \emph{Megaelosia}. A
-Taxonomia do NCBI atualiza o campo \texttt{ORGANISM} dos registros, que é o usado nas buscas
-com \verb|[Organism]|; mas o texto descritivo do registro (a linha que aparece no cabeçalho do
-FASTA) foi escrito por quem depositou a sequência e pode continuar com o nome antigo. Ao montar
-uma matriz, confira sempre os nomes.
-\end{enumerate}
+A FFT-NS-2 parte de uma matriz de distâncias confiável, mas não é tão lenta quanto outras
+estratégias do MAFFT. A E-INS-i lida bem com fragmentos como o 16S, em que regiões conservadas
+se alternam com regiões cheias de inserções e deleções; ela faz iterações, refinando o
+alinhamento até chegar a um resultado satisfatório, e \verb|--maxiterate 1000| aumenta o
+número de iterações possíveis para 1000. Em todos os comandos usaremos também
+\verb|--preservecase|, para que as bases sejam mantidas em letra maiúscula. Para saber mais
+sobre as estratégias, veja
+\url{https://mafft.cbrc.jp/alignment/software/algorithms/algorithms.html}.
+
+\subsection{Instalação}
+
+\paragraph{Windows (Ubuntu no WSL).} No terminal do Ubuntu, digite os comandos abaixo; o
+\verb|sudo| pede a senha do Ubuntu (que não aparece enquanto é digitada) e o \verb|apt|
+pergunta se deve continuar (responda \verb|Y|):
+\begin{Verbatim}
+$ sudo apt update
+$ sudo apt install mafft
+\end{Verbatim}
+
+\paragraph{macOS.} Na página do MAFFT (\url{https://mafft.cbrc.jp/alignment/software/}),
+entre em \ui{Mac OS X}, baixe o pacote padrão (\arq{.pkg}), abra-o e siga as instruções do
+instalador. Quem usa o Homebrew pode, em vez disso, digitar \verb|brew install mafft|.
+
+\paragraph{Conferindo.} Feche e abra o terminal e digite:
+\begin{Verbatim}
+$ mafft --version
+\end{Verbatim}
+Deve aparecer o número da versão (por exemplo, \verb|v7.505|, seguido da data). Lembre-se de que
+o símbolo \verb|$| representa o \emph{prompt} e não deve ser digitado; no seu terminal ele
+pode ser outro, como \verb|%|.
+
+\subsection{Indo até a pasta da prática}
+
+O MAFFT precisa encontrar os arquivos, então primeiro vamos até a pasta
+\arq{pratica_alinhamento} com o \verb|cd| (Prática~2).
+\begin{itemize}
+\item \textbf{Windows:} os arquivos do Windows ficam, no Ubuntu, dentro de \arq{/mnt/c}.
+Se a pasta estiver em \ui{Downloads}, por exemplo, o comando é o abaixo, trocando
+\verb|Nome| pelo seu usuário do Windows (a tecla \tecla{Tab} completa os nomes):
+\begin{Verbatim}
+$ cd /mnt/c/Users/Nome/Downloads/pratica_alinhamento
+\end{Verbatim}
+Outra opção: abra a pasta no
+Explorador de Arquivos, clique na barra de endereço, digite \verb|wsl| e tecle \tecla{Enter};
+o Ubuntu abre já dentro da pasta.
+\item \textbf{macOS:} digite \verb|cd| seguido de um espaço, arraste a pasta do Finder para
+a janela do Terminal e tecle \tecla{Enter}.
+\end{itemize}
+Confira se você está no lugar certo: \verb|pwd| mostra o caminho da pasta atual, e a lista
+mostrada por \verb|ls| deve incluir as pastas \arq{R} e \arq{sequencias}.
+\begin{Verbatim}
+$ pwd
+$ ls
+\end{Verbatim}
+Agora crie a pasta onde ficarão os alinhamentos:
+\begin{Verbatim}
+$ mkdir alinhamentos
+\end{Verbatim}
+
+\subsection{Alinhando um marcador}
+
+Vamos começar pelo COI, com a estratégia FFT-NS-2:
+\begin{Verbatim}
+$ mafft --preservecase --retree 2 \
+      sequencias/COI_ids.fasta > alinhamentos/COI_alinhado.fasta
+\end{Verbatim}
+A barra invertida \verb|\| no fim da primeira linha indica que o comando continua na linha
+de baixo: tecle \tecla{Enter} logo depois dela e continue digitando (você também pode
+escrever tudo em uma única linha, sem a barra). Por partes:
+\begin{itemize}
+\item \verb|mafft --preservecase --retree 2|: o programa e as opções (Seção~\ref{sec:mafft});
+\item \arq{sequencias/COI_ids.fasta}: o arquivo de entrada, com as sequências desalinhadas;
+\item \verb|> alinhamentos/COI_alinhado.fasta|: o sinal \verb|>| redireciona a saída do
+MAFFT, isto é, o alinhamento, para um arquivo, como na Prática~2. \textbf{Não use o mesmo nome
+do arquivo de entrada}, ou ele será apagado antes de ser lido!
+\end{itemize}
+Enquanto trabalha, o MAFFT mostra mensagens de progresso na tela; elas não vão para o arquivo.
+Quando o \emph{prompt} voltar, confira com \verb|ls alinhamentos| se o arquivo foi criado.
+
+\subsection{Alinhando os dois marcadores de uma vez}\label{sec:laco}
+
+Para o 16S, bastaria repetir o comando trocando o nome dos arquivos e a estratégia. Com muitos
+marcadores, porém, repetir comandos dá trabalho e abre espaço para erros. Um \textbf{laço}
+(\emph{loop}) executa os mesmos comandos para cada item de uma lista. Digite as linhas abaixo,
+teclando \tecla{Enter} ao fim de cada uma:
+\begin{Verbatim}
+for marcador in 16S COI
+do
+  if [ "$marcador" = "16S" ]
+  then
+    mafft --preservecase --genafpair --maxiterate 1000 \
+      sequencias/${marcador}_ids.fasta > alinhamentos/${marcador}_alinhado.fasta
+  else
+    mafft --preservecase --retree 2 \
+      sequencias/${marcador}_ids.fasta > alinhamentos/${marcador}_alinhado.fasta
+  fi
+done
+\end{Verbatim}
+Depois da primeira linha, o terminal troca o \emph{prompt} por um sinal de continuação
+(\verb|>| no bash do Ubuntu, \verb|for>| no zsh do macOS), indicando que espera o resto do
+laço. Os comandos só são executados depois que você digita \verb|done|. Os espaços no início
+das linhas são opcionais: servem apenas para facilitar a leitura.
+
+Como o laço funciona:
+\begin{itemize}
+\item \verb|for marcador in 16S COI| cria a variável \verb|marcador|, que vale \verb|16S|
+na primeira volta e \verb|COI| na segunda. Tudo o que está entre \verb|do| e \verb|done| é
+repetido a cada volta.
+\item \verb|${marcador}| é substituído pelo valor da variável: na primeira volta,
+\arq{sequencias/${marcador}_ids.fasta} vira \arq{sequencias/16S_ids.fasta}. As chaves são
+necessárias porque, sem elas, o terminal leria \verb|$marcador_ids| como o nome de outra
+variável, \verb|marcador_ids|, que não existe.
+\item \verb|if [ "$marcador" = "16S" ]| testa se o marcador é o 16S. Se for (\verb|then|),
+usa a E-INS-i; se não (\verb|else|), usa a FFT-NS-2. O \verb|fi| (\verb|if| ao contrário)
+fecha o teste. Os espaços dentro dos colchetes são obrigatórios.
+\end{itemize}
+
+O alinhamento do 16S leva mais tempo; espere o \emph{prompt} voltar e confira:
+\begin{Verbatim}
+$ ls alinhamentos
+16S_alinhado.fasta  COI_alinhado.fasta
+\end{Verbatim}
+O \arq{COI_alinhado.fasta} foi refeito pelo laço, com o mesmo resultado do comando anterior.
+
+Abra os dois alinhamentos no MEGA (\ui{Align > Edit/Build Alignment > Retrieve sequences from
+a file}) ou em um editor de texto e compare-os: \textbf{qual a principal diferença entre o
+alinhamento do 16S e o do COI? Qual dos dois demorou mais para ser concluído? Por quê?}
+Para medir o tempo, repita um dos comandos com \verb|time| na frente (por exemplo,
+\verb|time mafft --preservecase --retree 2 ...|).
+
+\begin{resposta}
+O COI (cerca de 712 colunas com o MAFFT v7.471) só tem \emph{gaps} no início e no fim,
+causados pelas diferenças de comprimento das sequências: não há inserções nem deleções
+internas, pois em um gene codificante elas mudariam a fase de leitura (a não ser que fossem
+múltiplas de três). O 16S (cerca de 2475 colunas) tem muitos \emph{gaps} internos, porque é
+um gene de RNA ribossomal, com regiões (as alças da estrutura secundária) que acumulam
+inserções e deleções. O 16S demorou mais (cerca de 6~s contra 0,2~s, em um computador de dois
+núcleos): usa a E-INS-i, com até 1000 iterações de refinamento, e tem mais sequências (22
+contra 14), algumas delas longas (até cerca de 2400~pb).
+\end{resposta}
 
 % =====================================================================
-\section{Usando o R para adquirir sequências}
+\section{Concatenando os alinhamentos no R}\label{sec:concatenar}
 % =====================================================================
 
-\subsection{Preparando o R}
+Nas próximas práticas, os dois marcadores serão analisados juntos, em uma única matriz: o 16S
+nas primeiras colunas e o COI em seguida. Essa união se chama \textbf{concatenação}, e deve
+ser feita \textbf{pelo nome da espécie}: a linha de \emph{Hylodes nasus} da matriz final deve
+juntar o 16S e o COI de \emph{H.~nasus}, embora os dois fragmentos tenham números de acesso
+diferentes. Quando uma espécie tem apenas um dos marcadores, o outro é preenchido com
+\verb|?|, o símbolo de \textbf{dado faltante}.
 
-Usaremos o R (\url{https://www.r-project.org/}) por meio do RStudio. Recomenda-se criar um
-\emph{projeto} do RStudio para a prática (\ui{File > New Project > New Directory}): o RStudio
-passa a usar a pasta do projeto como pasta de trabalho, e todos os arquivos são gravados ali,
-sem a necessidade de \verb|setwd()| com caminhos que só existem no seu computador. Copie para a
-pasta do projeto as pastas \arq{R}, \arq{dados} e \arq{referencia}.
+Abra o RStudio, crie um projeto na pasta \arq{pratica_alinhamento} (\ui{File > New Project >
+Existing Directory}) e abra o script \arq{R/04_concatenar.R}. Execute-o linha a linha
+(\tecla{Ctrl+Enter}, ou \tecla{Cmd+Enter} no macOS), acompanhando os resultados no console.
+O script usa o pacote ape \cite{paradis2019}, instalado na Prática~3. Os principais passos
+são descritos abaixo.
 
-Precisamos de dois pacotes: \texttt{ape} \cite{paradis2019}, para ler e gravar sequências, e
-\texttt{rentrez} \cite{winter2017}, para conversar com as bases do NCBI. Abra o script
-\arq{R/01_preparar_R.R} e execute-o (no RStudio, \tecla{Ctrl+Enter} executa a linha atual;
-\tecla{Ctrl+Shift+Enter}, o script inteiro):
+\paragraph{1. Ler os alinhamentos.} \verb|read.FASTA()| lê o arquivo e \verb|as.matrix()|
+transforma o alinhamento em uma matriz, com uma linha por sequência e uma coluna por posição;
+\verb|dim()| mostra o número de linhas e de colunas:
 \begin{Verbatim}
-install.packages(c("ape", "rentrez"))
-library(ape)
-library(rentrez)
-packageVersion("ape")
-packageVersion("rentrez")
-\end{Verbatim}
-\verb|library()| carrega o pacote; se ele não estiver instalado ou não funcionar, aparece uma
-mensagem de erro (por exemplo, \texttt{there is no package called 'ape'}). Se nenhum erro
-aparecer e as duas últimas linhas mostrarem as versões instaladas (algo como
-\verb|[1] '5.8.1'|), você pode seguir adiante. Anote as versões: elas fazem parte da
-documentação de um trabalho. A instalação só precisa ser feita uma vez em cada computador; nas
-sessões seguintes basta carregar os pacotes com \verb|library()|.
-
-\paragraph{Limite de acessos do NCBI.} O NCBI aceita até 3 requisições por segundo de cada
-endereço de internet. Em uma sala em que todos usam a mesma rede, esse limite pode ser atingido,
-e aparecerá um erro como \texttt{HTTP 429 Too Many Requests}: espere alguns segundos e execute
-o comando de novo. Quem cria uma conta no NCBI pode gerar uma chave pessoal da API (\emph{API
-key}), que eleva o limite para 10 requisições por segundo, e informá-la ao R com
-\verb|set_entrez_key("...")|. A chave é pessoal: não a publique junto com scripts.
-
-\subsection{Baixando as sequências por nome}
-
-Abra o script \arq{R/02_baixar_por_nome.R}. Vamos executá-lo por partes, entendendo cada uma.
-
-\paragraph{Parte 1: o que buscar.}
-\begin{Verbatim}[fontsize=\footnotesize]
-library(ape)
-library(rentrez)
-dir.create("sequencias", showWarnings = FALSE)
-
-generos <- c("Crossodactylus", "Hylodes", "Megaelosia", "Phantasmarana")
-
-termo_coi <- paste("(COI[All Fields] OR COX1[All Fields]",
-                   'OR "cytochrome oxidase subunit 1"[All Fields]',
-                   'OR "cytochrome oxidase subunit I"[All Fields]',
-                   'OR "cytochrome c oxidase subunit I"[All Fields])')
-marcadores <- c("16S" = "16S[All Fields]", "COI" = termo_coi)
-filtro_tamanho <- "100:5000[SLEN]"
-termo_generos <- paste0("(", paste0(generos, "[Organism]", collapse = " OR "), ")")
-\end{Verbatim}
-O COI aparece no GenBank com vários nomes; por isso o termo junta as variantes com \verb|OR|
-(\verb|paste()| une os pedaços de texto, separados por espaço). A última linha monta o texto
-\verb|(Crossodactylus[Organism] OR Hylodes[Organism] OR ...)|: digite \verb|termo_generos| no
-console para vê-lo.
-
-\paragraph{Parte 2: uma função para buscar e baixar.}
-\begin{Verbatim}[fontsize=\footnotesize]
-baixar_fasta <- function(termo, arquivo, lote = 200) {
-  busca <- entrez_search(db = "nuccore", term = termo, use_history = TRUE)
-  if (busca$count == 0) return(0)
-  if (file.exists(arquivo)) file.remove(arquivo)
-  for (inicio in seq(0, busca$count - 1, by = lote)) {
-    fasta <- entrez_fetch(db = "nuccore", web_history = busca$web_history,
-                          rettype = "fasta", retstart = inicio, retmax = lote)
-    cat(fasta, file = arquivo, append = TRUE)
-    Sys.sleep(0.5)
-  }
-  busca$count
-}
-\end{Verbatim}
-\verb|entrez_search()| faz a busca na base \texttt{nuccore} (nucleotídeos) e, com
-\verb|use_history = TRUE|, deixa a lista de resultados guardada no servidor do NCBI.
-\verb|entrez_fetch()| baixa as sequências em formato FASTA, em lotes de 200 (\verb|retstart|
-indica a partir de qual resultado), o que funciona mesmo quando há milhares de resultados. O
-arquivo antigo é apagado antes, para que executar o script de novo não duplique as sequências,
-e \verb|Sys.sleep(0.5)| faz uma pausa entre os lotes, respeitando o limite do NCBI.
-
-\paragraph{Parte 3: baixar um arquivo por marcador.}
-\begin{Verbatim}[fontsize=\footnotesize]
-for (m in names(marcadores)) {
-  termo <- paste(termo_generos, "AND", marcadores[[m]], "AND", filtro_tamanho)
-  arquivo <- file.path("sequencias", paste0("hylodidae_", m, ".fasta"))
-  n <- baixar_fasta(termo, arquivo)
-  message(m, ": ", n, " sequências gravadas em ", arquivo)
-}
-\end{Verbatim}
-Ao final, a pasta \arq{sequencias} contém \arq{hylodidae_16S.fasta} e
-\arq{hylodidae_COI.fasta}, cada um com todas as sequências de Hylodidae do marcador. Anote
-quantas sequências foram gravadas: o número cresce à medida que novas sequências são
-depositadas.
-
-\paragraph{Parte 4: quantas sequências há de cada gênero?} O script repete a busca para cada
-gênero e marcador, pedindo só a contagem (\verb|retmax = 0|), e monta uma tabela:
-\begin{Verbatim}[fontsize=\footnotesize]
-contagem <- sapply(generos, function(g) {
-  sapply(names(marcadores), function(m) {
-    Sys.sleep(0.5)
-    termo <- paste(paste0(g, "[Organism]"), "AND", marcadores[[m]], "AND", filtro_tamanho)
-    entrez_search(db = "nuccore", term = termo, retmax = 0)$count
-  })
-})
-contagem
+s16 <- as.matrix(read.FASTA("alinhamentos/16S_alinhado.fasta"))
+coi <- as.matrix(read.FASTA("alinhamentos/COI_alinhado.fasta"))
+dim(s16)
+dim(coi)
 \end{Verbatim}
 
-\paragraph{Parte 5: conferir os arquivos.}
+\paragraph{2. Separar a espécie do número de acesso.} Duas funções com expressões regulares
+(Prática~1) separam as partes do nome:
 \begin{Verbatim}
-s16 <- read.FASTA("sequencias/hylodidae_16S.fasta")
-coi <- read.FASTA("sequencias/hylodidae_COI.fasta")
-length(s16)
-head(names(s16))
-summary(lengths(s16))
+especie <- function(x) sub("_[A-Z]+_?[0-9]+$", "", x)
+acesso  <- function(x) sub("^.*_([A-Z]+_?[0-9]+)$", "\\1", x)
 \end{Verbatim}
-\verb|length()| informa o número de sequências; \verb|names()|, os cabeçalhos; e
-\verb|summary(lengths())|, o resumo dos comprimentos em pares de bases.
+Assim, \verb|Crossodactylus_schmidti_AY843579| vira \verb|Crossodactylus_schmidti| e
+\verb|AY843579|. O script monta uma tabela com o acesso usado para cada espécie em cada
+marcador e, em seguida, renomeia as linhas das duas matrizes apenas com o nome da espécie.
 
-\paragraph{Parte 6: nomes curtos.} Os cabeçalhos do GenBank são longos
-(\texttt{KJ961566.1 Megaelosia boticariana voucher CFBHT00425 cytochrome oxidase\ldots}).
-Para transformá-los em \verb|Genero_especie_acesso|, usamos a mesma expressão regular da
-Prática~1 (no R, cada \verb|\| é escrita \verb|\\|, e \verb|perl = TRUE| permite o grupo de não
-captura \verb|(?:...)|, que aqui ignora o aviso \texttt{UNVERIFIED:} presente em alguns
-registros):
-\begin{Verbatim}[fontsize=\footnotesize]
-renomear <- function(nomes) {
-  sub("^([A-Z]+_?[0-9]+)\\.[0-9]+ (?:UNVERIFIED: )?([A-Z][a-z]+) ([a-z]+).*$",
-      "\\2_\\3_\\1", nomes, perl = TRUE)
-}
-names(s16) <- renomear(names(s16))
-names(coi) <- renomear(names(coi))
-names(s16)[duplicated(names(s16))]
-write.FASTA(s16, "sequencias/hylodidae_16S_nomes.fasta")
-write.FASTA(coi, "sequencias/hylodidae_COI_nomes.fasta")
+\paragraph{3. Completar com dados faltantes.} \verb|union()| reúne os nomes das duas
+matrizes, e \verb|setdiff()| mostra quais espécies faltam em cada uma:
+\begin{Verbatim}
+nomes <- sort(union(rownames(s16), rownames(coi)))
+setdiff(nomes, rownames(s16))   # espécies sem 16S
+setdiff(nomes, rownames(coi))   # espécies sem COI
 \end{Verbatim}
-A penúltima linha verifica se há nomes repetidos (deve mostrar \verb|character(0)|).
+A função \verb|completar()| acrescenta a cada matriz uma linha de \verb|?| para cada espécie
+que falta e põe as linhas na mesma ordem (a de \verb|nomes|).
 
-\subsection{Baixando as sequências por número de acesso}\label{sec:acesso}
-
-Suponhamos que acaba de sair a descrição de uma nova espécie de \emph{Phantasmarana}, como
-\emph{P. curucutuensis} e \emph{P. tamuia}, descritas em 2022 \cite{desa2022}, e que os autores
-fizeram uma ótima árvore, à qual você gostaria de acrescentar a sua espécie nova de
-\emph{Hylodes}. Infelizmente, os autores não disponibilizaram a matriz usada no artigo, mas o
-material suplementar traz a lista de números de acesso de todas as sequências. Nesse caso, você
-pode baixar exatamente as mesmas sequências. Abra o script \arq{R/03_baixar_por_acesso.R}:
-\begin{Verbatim}[fontsize=\footnotesize]
-library(ape)
-ids_16S <- c("KY007117.1", "KU215902.1", "KM390791.1", "AY843579.1", "AY263235.1",
-             "MF624225.1", "KY627916.1", "KJ961575.1", "KJ961577.1", "MF624238.1",
-             "AY843689.1", "KJ961586.1", "KJ961578.1", "DQ283072.1", "KJ961583.1",
-             "KM390793.1", "KM390794.1", "KU495250.1", "KY002953.1", "KY627911.1",
-             "KY627913.1", "KY627914.1")
-ids_COI <- c("KU494387.1", "DQ502738.1", "KU494457.1", "KC593345.1", "KJ961562.1",
-             "KJ961561.1", "KJ961558.1", "KJ961557.1", "KJ961556.1", "DQ502873.1",
-             "KJ961565.1", "KU494594.1", "KJ961566.1", "DQ502839.1")
-s16 <- read.GenBank(ids_16S)
-coi <- read.GenBank(ids_COI)
+\paragraph{4. Concatenar.} Com as duas matrizes com as mesmas linhas, na mesma ordem,
+\verb|cbind()| junta as colunas:
+\begin{Verbatim}
+concatenada <- cbind(s16_completo, coi_completo)
+dim(concatenada)
 \end{Verbatim}
-A função \verb|read.GenBank()|, do \texttt{ape}, baixa as sequências e guarda, no atributo
-\texttt{species}, o nome do organismo segundo a taxonomia \emph{atual} do NCBI. Compare esse
-nome com a descrição original de cada registro:
-\begin{Verbatim}[fontsize=\footnotesize]
-data.frame(acesso = names(coi),
-           organismo = attr(coi, "species"),
-           descricao = substr(attr(coi, "description"), 1, 60))
-\end{Verbatim}
-Por fim, damos às sequências nomes no formato \verb|Genero_especie_acesso|, usando o nome atual
-do organismo, e gravamos os arquivos:
-\begin{Verbatim}[fontsize=\footnotesize]
-names(s16) <- paste(attr(s16, "species"), sub("\\.[0-9]+$", "", names(s16)), sep = "_")
-names(coi) <- paste(attr(coi, "species"), sub("\\.[0-9]+$", "", names(coi)), sep = "_")
-write.FASTA(s16, "sequencias/16S_ids.fasta")
-write.FASTA(coi, "sequencias/COI_ids.fasta")
-\end{Verbatim}
-Agora você tem no seu computador os arquivos \arq{16S_ids.fasta} e \arq{COI_ids.fasta}, com
-as sequências desejadas. O script traz, comentada, a versão com o \texttt{rentrez}
-(\verb|entrez_fetch()|), que grava o FASTA exatamente como o NCBI o fornece.
+O número de colunas da matriz concatenada deve ser a soma das colunas do 16S e do COI.
 
-\paragraph{Sem acesso ao NCBI?} Se a rede da sala bloquear o NCBI ou o serviço estiver fora do
-ar, use os arquivos \arq{referencia/16S_ids_download_2021.fasta} e
-\arq{referencia/COI_ids_download_2021.fasta}: são as mesmas sequências, baixadas em 2021, com os
-cabeçalhos da época.
+\paragraph{5. Gravar.} O script cria a pasta \arq{matriz} com:
+\begin{itemize}
+\item \arq{hylodidae_concatenado.fasta}, \arq{.phy} e \arq{.nex}: a mesma matriz nos formatos
+FASTA, PHYLIP e NEXUS, pedidos por diferentes programas de análise filogenética;
+\item \arq{particoes.txt}: as colunas ocupadas por cada fragmento, que serão usadas para
+analisar cada marcador com seu próprio modelo de evolução:
+\begin{Verbatim}
+DNA, 16S = 1-2475
+DNA, COI = 2476-3187
+\end{Verbatim}
+\item \arq{tabela_acessos.csv}: os números de acesso usados para cada espécie, a tabela que
+acompanha a publicação de um trabalho.
+\end{itemize}
 
-Com as sequências em mãos, o próximo passo é o alinhamento.
+Os números de colunas citados acima são os obtidos com o MAFFT v7.471; com outra versão,
+eles podem variar um pouco.
 
 % =====================================================================
 \section*{Para refletir}
@@ -401,42 +376,34 @@ Com as sequências em mãos, o próximo passo é o alinhamento.
 % =====================================================================
 
 \begin{enumerate}
-\item Na tabela \verb|contagem|, quantas sequências de 16S e de COI há para \emph{Megaelosia}
-e para \emph{Phantasmarana}? Que espécie(s) aparece(m) quando se busca
-\verb|Megaelosia[Organism]|?
-\item Procure, nos cabeçalhos de \arq{hylodidae_COI.fasta} (ou nos nomes gerados pela
-função \verb|renomear()|), sequências de \emph{Phantasmarana}. Elas aparecem com esse nome?
-O que isso indica sobre a confiabilidade das linhas de descrição dos registros?
-\item Na Seção~\ref{sec:acesso}, compare as colunas \texttt{organismo} e \texttt{descricao}
-da tabela. Quais registros mudaram de nome?
-\item A lista de números de acesso inclui \emph{Limnomedusa macroglossa}, que não pertence a
-Hylodidae. Por que ela foi incluída?
-\item Por que excluímos sequências com mais de 5000 pares de bases? O que aconteceria se um
-genoma mitocondrial completo entrasse no arquivo do 16S?
-\item Executar o script \arq{02_baixar_por_nome.R} hoje e daqui a um ano produziria o mesmo
-arquivo? Como registrar, em um trabalho, quais sequências foram usadas?
+\item No MEGA, por que foi preciso trocar o código genético para \ui{Vertebrate
+Mitochondrial}? O que aconteceria com o código \ui{Standard}?
+\item O que seria preciso mudar no laço da Seção~\ref{sec:laco} para alinhar também um
+terceiro marcador, por exemplo o citocromo~\emph{b}, em um arquivo \arq{cytb_ids.fasta}, com
+a estratégia FFT-NS-2?
+\item Quantas espécies há na matriz concatenada? Quais delas não têm o 16S e quais não têm o
+COI? Quantas colunas tem a matriz?
+\item Por que a concatenação é feita pelo nome da espécie, e não pela posição das sequências
+nos arquivos ou pelo número de acesso?
 \end{enumerate}
 
 \begin{resposta}
-1. Os números mudam com o tempo; espera-se que \emph{Megaelosia} tenha apenas sequências de
-\emph{M. goeldii}, e \emph{Phantasmarana}, as das demais espécies (inclusive as depositadas
-como \emph{Megaelosia}), pois a busca por \verb|[Organism]| usa a taxonomia atual.
-2. Sequências depositadas antes de 2021 tendem a manter ``Megaelosia'' na descrição; os nomes
-gerados a partir dela (por exemplo, \texttt{Megaelosia\_boticariana\_KJ961566}) ficam
-desatualizados. A descrição é texto livre do depositante; o campo \texttt{ORGANISM} é o que
-acompanha a taxonomia. Por isso a Seção~\ref{sec:acesso} usa \verb|attr(x, "species")|.
-3. Esperado (se a Taxonomia do NCBI estiver atualizada): \texttt{MF624238} (\emph{P.
-jordanensis}), \texttt{KJ961586} e \texttt{KJ961566} (\emph{P. boticariana}) e
-\texttt{KU494594} (\emph{P. apuana}); \texttt{DQ283072} e \texttt{DQ502839} continuam
-\emph{Megaelosia goeldii}. O script \arq{R/verificar_pratica3.R} confere isso.
-4. É o grupo externo (Alsodidae, família proximamente relacionada a Hylodidae), usado para
-enraizar a árvore.
-5. Um genoma mitocondrial tem cerca de 17 mil pares de bases e contém todos os genes; no
-alinhamento do 16S, ele introduziria milhares de posições sem homologia com as demais
-sequências. Ele pode ser aproveitado, mas extraindo-se apenas o trecho do 16S.
-6. Não: novas sequências são depositadas continuamente, e registros podem ser atualizados. Por
-isso, publica-se a lista de números de acesso (com a versão) de todas as sequências usadas,
-como na Seção~\ref{sec:acesso}, além da data da busca e do termo usado.
+1. No código mitocondrial de vertebrados, \texttt{TGA} codifica triptofano (e não é códon de
+parada), \texttt{ATA} codifica metionina, e \texttt{AGA} e \texttt{AGG} são códons de parada.
+Com o código \ui{Standard}, os \texttt{TGA} apareceriam como \texttt{*}, sugerindo,
+erradamente, que as sequências têm \emph{stop codons}.
+2. Basta acrescentar o marcador à lista: \verb|for marcador in 16S COI cytb|. Como o teste
+\verb|if| só separa o 16S, o \verb|cytb| cai no \verb|else| e é alinhado com a FFT-NS-2.
+3. 24 espécies (as 22 do 16S mais \emph{Hylodes perere} e \emph{Phantasmarana apuana}, que só
+têm COI). Sem 16S: \emph{H.~perere} e \emph{P.~apuana}. Sem COI: \emph{Crossodactylus aeneus},
+\emph{C.~bokermanni}, \emph{C.~werneri}, \emph{Hylodes caete}, \emph{H.~charadranaetes},
+\emph{H.~fredi}, \emph{H.~lateristrigatus}, \emph{H.~meridionalis}, \emph{H.~uai} e
+\emph{Phantasmarana jordanensis}. A matriz tem 3187 colunas (2475 + 712) com o MAFFT v7.471.
+4. As sequências de cada marcador vêm de registros diferentes, com números de acesso
+diferentes (por exemplo, \emph{H.~nasus}: \texttt{KJ961577} no 16S e \texttt{KJ961557} no
+COI), e os arquivos têm números diferentes de sequências, em ordens diferentes. O que liga os
+dois fragmentos é o organismo; juntá-los pela posição misturaria espécies diferentes na mesma
+linha.
 \end{resposta}
 
 % =====================================================================
@@ -446,18 +413,21 @@ como na Seção~\ref{sec:acesso}, além da data da busca e do termo usado.
 % =====================================================================
 
 \begin{description}[style=nextline,leftmargin=1.5em]
-\item[\texttt{HTTP 429} ou \texttt{Too Many Requests}] Limite de requisições do NCBI atingido
-(comum quando a turma toda usa a mesma rede). Aguarde alguns segundos e repita; se possível, use
-uma chave da API (\verb|set_entrez_key()|).
-\item[\texttt{HTTP 500}, \texttt{HTTP 502} ou tempo esgotado] Instabilidade do NCBI. Repita
-mais tarde ou use os arquivos da pasta \arq{referencia}.
-\item[\texttt{cannot open file}] O arquivo não está na pasta de trabalho. Confira com
-\verb|getwd()| e \verb|list.files()|; no RStudio, abra o projeto da prática.
-\item[\texttt{there is no package called}] O pacote não foi instalado: execute
-\arq{01_preparar_R.R}.
-\item[Arquivo com sequências repetidas] Ocorria na versão anterior do tutorial, que acrescentava
-as sequências ao arquivo existente a cada execução. Os scripts atuais apagam o arquivo antes de
-gravar.
+\item[\texttt{mafft: command not found}] O MAFFT não foi instalado, ou o terminal foi aberto
+antes da instalação: feche-o e abra-o de novo. No macOS, com o pacote \arq{.pkg}, o programa
+fica em \arq{/usr/local/bin/mafft}.
+\item[\texttt{No such file or directory}] Você não está na pasta \arq{pratica_alinhamento},
+ou o nome do arquivo foi digitado errado. Confira com \verb|pwd| e \verb|ls|.
+\item[Arquivo alinhado vazio (0 bytes)] O MAFFT não conseguiu ler a entrada (por exemplo,
+porque o nome do arquivo de entrada está errado); leia a mensagem de erro na tela. Se o erro
+for sobre a pasta \arq{alinhamentos}, ela ainda não existe: rode \verb|mkdir alinhamentos|.
+\item[O terminal fica mostrando \texttt{>} e não executa nada] O laço ou o \verb|if| não foi
+fechado: falta digitar \verb|fi| ou \verb|done|. Se errar no meio, tecle \tecla{Ctrl+C} e
+comece de novo.
+\item[\texttt{cannot open file} no R] A pasta de trabalho não é \arq{pratica_alinhamento}, ou
+os alinhamentos ainda não foram feitos. Confira com \verb|getwd()| e \verb|list.files()|.
+\item[\texttt{there is no package called \textquotesingle ape\textquotesingle}] Instale o pacote como na Prática~3
+(\verb|install.packages("ape")|).
 \end{description}
 
 % =====================================================================
@@ -465,51 +435,46 @@ gravar.
 % =====================================================================
 
 \begin{enumerate}
-\item \textbf{Taxonomia.} Inclusão de \emph{Phantasmarana} \cite{vittorazzi2021,desa2022} na
-busca por nome e no cenário da busca por número de acesso; discussão sobre nomes antigos nas
-descrições dos registros.
-\item \textbf{Arquivos de saída.} O código anterior usava \verb|paste(i, "hylodidae_16S.fasta",|
-\verb|sep = "_")| dentro do laço, o que gravava um arquivo por gênero
-(\arq{Hylodes_hylodidae_16S.fasta} etc.), e não os dois arquivos mencionados no texto. Agora a
-busca reúne os gêneros e grava um arquivo por marcador.
-\item \textbf{Sequências duplicadas.} Com \verb|append = TRUE|, executar o script de novo
-duplicava as sequências. Agora o arquivo é recriado.
-\item \textbf{Termos de busca.} \verb|16S [ALL]| e \verb|coi [ALL]| foram substituídos por
-termos com os nomes alternativos do COI e pelo filtro de comprimento \verb|[SLEN]|, que exclui
-genomas mitocondriais completos.
-\item \textbf{Downloads grandes.} Uso do \emph{web history} do NCBI e de lotes de 200
-sequências, com pausa entre os lotes, no lugar de um único pedido com até 10~000 identificadores.
-\item \textbf{Pasta de trabalho.} \verb|setwd("C:/caminho/...")| foi substituído por um projeto
-do RStudio e caminhos relativos.
-\item \textbf{Instalação.} \verb|install.packages()| com os dois pacotes de uma vez e conferência
-com \verb|library()| e \verb|packageVersion()|, no lugar de \verb|installed.packages()|, que só
-verifica se a pasta do pacote existe, e não se ele funciona.
-\item \textbf{Nomes.} Renomeação para \verb|Genero_especie_acesso| com expressão regular (ligação
-com a Prática 1) e, na busca por acesso, com o nome atual do organismo
-(\verb|read.GenBank()|).
-\item \textbf{BLAST.} Instruções atualizadas para a página atual, que usa por padrão a base
-\emph{core\_nt} desde 2024, e descrição das colunas do resultado; a captura de tela foi
-substituída pela descrição em texto.
-\item \textbf{Arquivos de referência.} Inclusão das sequências baixadas em 2021, para uso sem
-acesso ao NCBI, e de um script de verificação para o professor.
+\item \textbf{Sequências.} No lugar de \arq{hylodidae_16S.fas} e \arq{hylodidae_coi.fas},
+são usadas as matrizes baixadas por número de acesso na Prática~3, com nomes no formato
+\verb|Genero_especie_acesso| e a taxonomia atual (\emph{Phantasmarana}).
+\item \textbf{MEGA.} Atualização do MEGA7 para o MEGA 12 \cite{kumar2024}; apenas o COI é
+alinhado no MEGA. As capturas de tela foram substituídas por descrições em texto.
+\item \textbf{MAFFT no terminal.} O menu interativo do \arq{mafft.bat} (Windows) foi
+substituído por comandos digitados no terminal do Ubuntu (WSL) ou do macOS, com instruções de
+instalação, e os dois marcadores passaram a ser alinhados com um laço.
+\item \textbf{Opções do menu.} O texto anterior mandava escolher a ``opção dois'' para a
+FFT-NS-2, que é a opção~3 do menu, e indicava a opção~6 (E-INS-i) para o 16S, mas o exemplo
+mostrava a opção~3. As estratégias agora são indicadas pelas próprias opções de linha de
+comando (\verb|--retree 2| e \verb|--genafpair --maxiterate 1000|).
+\item \textbf{Ordem das sequências.} A saída ordenada por similaridade (\ui{Sorted},
+\verb|--reorder|) foi substituída pela ordem de entrada, o padrão do MAFFT.
+\item \textbf{Servidor do MAFFT.} A seção sobre o alinhamento no servidor \emph{on-line} foi
+retirada.
+\item \textbf{Concatenação.} Incluída a concatenação dos dois alinhamentos no R, pelo nome da
+espécie, com dados faltantes (\verb|?|), arquivo de partições e tabela de números de acesso.
+\item \textbf{Revisão do texto.} Correção de erros de digitação (``múltilos'', ``Edgard'',
+``co relação'') e inclusão da seção \emph{Para refletir}.
 \end{enumerate}
 
 \begin{thebibliography}{9}
-\bibitem{asw} Frost, D.~R. 2026. \emph{Amphibian Species of the World: an Online Reference},
-versão 6.2. American Museum of Natural History, Nova York.
-\url{https://amphibiansoftheworld.amnh.org/}. Acesso em 9 nov. 2026.
-\bibitem{desa2022} de Sá, F.~P., Condez, T.~H., Lyra, M.~L., Haddad, C.~F.~B. \& Malagoli, L.~R.
-2022. Unveiling the diversity of giant neotropical torrent frogs (Hylodidae): phylogenetic
-relationships, morphology, and the description of two new species. \emph{Systematics and
-Biodiversity} 20(1): 2039318.
+\bibitem{edgar2004} Edgar, R.~C. 2004. MUSCLE: multiple sequence alignment with high accuracy
+and high throughput. \emph{Nucleic Acids Research} 32(5): 1792--1797.
+\bibitem{katoh2013} Katoh, K. \& Standley, D.~M. 2013. MAFFT multiple sequence alignment
+software version 7: improvements in performance and usability. \emph{Molecular Biology and
+Evolution} 30(4): 772--780.
+\bibitem{kumar2024} Kumar, S., Stecher, G., Suleski, M., Sanderford, M., Sharma, S. \&
+Tamura, K. 2024. MEGA12: Molecular Evolutionary Genetic Analysis version 12 for adaptive and
+green computing. \emph{Molecular Biology and Evolution} 41(12): msae263.
+\bibitem{larkin2007} Larkin, M.~A., Blackshields, G., Brown, N.~P., Chenna, R., McGettigan,
+P.~A., McWilliam, H., Valentin, F., Wallace, I.~M., Wilm, A., Lopez, R., Thompson, J.~D.,
+Gibson, T.~J. \& Higgins, D.~G. 2007. Clustal W and Clustal X version 2.0.
+\emph{Bioinformatics} 23(21): 2947--2948.
+\bibitem{notredame2000} Notredame, C., Higgins, D.~G. \& Heringa, J. 2000. T-Coffee: a novel
+method for fast and accurate multiple sequence alignment. \emph{Journal of Molecular Biology}
+302(1): 205--217.
 \bibitem{paradis2019} Paradis, E. \& Schliep, K. 2019. ape 5.0: an environment for modern
 phylogenetics and evolutionary analyses in R. \emph{Bioinformatics} 35: 526--528.
-\bibitem{vittorazzi2021} Vittorazzi, S.~E., Augusto-Alves, G., Neves-da-Silva, D.,
-Carvalho-e-Silva, A.~M.~P.~T., Recco-Pimentel, S.~M., Toledo, L.~F., Lourenço, L.~B. \&
-Bruschi, D.~P. 2021. Paraphyly in the giant torrent-frogs (Anura: Hylodidae:
-\emph{Megaelosia}) and the description of a new genus. \emph{Salamandra} 57(2): 274--284.
-\bibitem{winter2017} Winter, D.~J. 2017. rentrez: an R package for the NCBI eUtils API.
-\emph{The R Journal} 9(2): 520--526.
 \end{thebibliography}
 
 \end{document}
