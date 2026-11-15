@@ -2,6 +2,7 @@
 layout: page
 title: Aquisição de sequências no GenBank
 description: "BLAST, buscas no site do GenBank e download de sequências com o R"
+description_en: "Searching and downloading sequences from GenBank with BLAST and R."
 order: 1
 toc:
   sidebar: left
