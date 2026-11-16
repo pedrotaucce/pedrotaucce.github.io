@@ -313,8 +313,8 @@ jekyll-archives:
 # -----------------------------------------------------------------------------
 
 scholar:
-  last_name: [Taucce]
-  first_name: [Pedro, Pedro P. G., P. P. G.]
+  last_name: [Taucce, Taucci]
+  first_name: [Pedro, Pedro P. G., P. P. G., Pedro Paulo Goulart, Pedro P G, Pedro P.G.]
 
   style: apa
   locale: en
