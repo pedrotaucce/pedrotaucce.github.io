@@ -1,0 +1,526 @@
+% =====================================================================
+%  Máxima verossimilhança com dados de RAD-seq no IQ-TREE 3
+%  Métodos Computacionais em Sistemática e Filogeografia (UNESP)
+%
+%  Compilar com pdfLaTeX (Overleaf: Menu > Compiler > pdfLaTeX).
+%
+%  VERSÃO: por padrão gera a versão do ALUNO (sem as notas do professor).
+%  Para a versão do PROFESSOR, troque \professorfalse por \professortrue
+%  na linha indicada abaixo, ou compile com
+%     pdflatex "\def\versaoprofessor{}\input{apostila_iqtree.tex}"
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\newif\ifprofessor
+\professorfalse            % <-- troque para \professortrue para incluir as notas do professor
+\ifdefined\versaoprofessor \professortrue \fi
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage[provide=*,brazilian]{babel}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{fancyvrb}
+\usepackage{upquote}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{comment}
+\usepackage{needspace}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\fvset{xleftmargin=1.5em,fontsize=\small}
+\setlist{itemsep=0.2em,topsep=0.4em}
+\setlength{\parskip}{0.35em}
+\setlength{\emergencystretch}{3em}
+\urlstyle{tt}
+
+\newcommand{\arq}[1]{\path{#1}}
+\newcommand{\ui}[1]{\textit{#1}}
+\newcommand{\cmd}[1]{\texttt{#1}}
+
+\ifprofessor
+  \specialcomment{resposta}{\begin{quote}\small\textbf{Para o professor.}\ }{\end{quote}}
+\else
+  \excludecomment{resposta}
+\fi
+
+\newcounter{questao}
+\newcommand{\questao}{\par\needspace{3\baselineskip}\refstepcounter{questao}\noindent\textbf{Questão~\thequestao.}\ }
+
+\title{Máxima verossimilhança com dados de RAD-seq no IQ-TREE 3\\[0.3em]
+\large Matriz completa, SNPs e fatores de concordância em \emph{Pedicularis}}
+\author{Métodos Computacionais em Sistemática e Filogeografia\\Universidade Estadual Paulista (UNESP)}
+\date{\ifprofessor Versão do professor (com notas)\else Versão do aluno\fi\\ Novembro de 2026}
+
+\begin{document}
+\maketitle
+
+\paragraph{O roteiro.} Vamos estimar a filogenia das 13 amostras de \emph{Pedicularis} por
+máxima verossimilhança no IQ-TREE 3 \cite{wong2025}, com três matrizes que o ipyrad gerou a partir
+dos mesmos dados, e comparar o que cada uma mostra. No fim, vamos medir o conflito entre os sítios
+com os fatores de concordância de sítio.
+
+\paragraph{Arquivos.} A pasta \arq{pratica_iqtree} contém as três matrizes do ipyrad, para quem
+não tiver as suas: \arq{pedicularis.phy}, \arq{pedicularis.snps} e \arq{pedicularis.usnps}.
+
+\paragraph{Programas.} IQ-TREE 3 e FigTree.
+
+\begin{resposta}
+Os números do gabarito foram obtidos com o IQ-TREE 3.1.4 (Linux) e as matrizes do ipyrad 0.9.108
+que você gerou. Quem usar as próprias saídas do ipyrad vai ter números um pouco diferentes; com
+\cmd{-{}-seed 2026} e os arquivos da pasta, devem ser os mesmos do gabarito. Na máquina dos testes, com
+dois núcleos, os tempos foram: Análise~1, 17 minutos; Análise~2, 10 minutos (com um núcleo);
+Análise~3, 2,5 minutos; e o sCF, 15 minutos (quase todo gasto reestimando os parâmetros do modelo
+na matriz completa). Num notebook com mais núcleos, deve ser mais rápido. Vale começar pela
+Análise~1 e deixá-la rodando enquanto os alunos fazem as Análises 2 e 3 em outra janela do
+terminal; o sCF entra logo depois que ela terminar.
+\end{resposta}
+
+% =====================================================================
+\section{Antes de começar: o tutorial do ipyrad}
+% =====================================================================
+
+Esta prática parte das saídas do tutorial do ipyrad com os dados de RAD-seq de \emph{Pedicularis}
+(13 amostras, Eaton \& Ree \cite{eaton2013}), feito na aula anterior:
+\url{https://ipyrad.readthedocs.io/en/master/pedicularis_.html}. Três avisos sobre aquele
+tutorial:
+\begin{enumerate}
+\item \textbf{O download pode falhar.} O \cmd{ipyrad -{}-download} usa o \cmd{fastq-dump} do
+sra-tools, e o ambiente do ipyrad pode vir com uma versão de 2019 (2.9.6), que não lê o formato
+atual dos arquivos do NCBI. O erro aparece como \cmd{rcColumn, rcNotFound}. Para consertar,
+dentro do ambiente do ipyrad:
+\begin{Verbatim}
+conda install -c conda-forge -c bioconda "sra-tools>=3"
+fastq-dump --version
+\end{Verbatim}
+A versão deve começar com 3. Apague os arquivos \arq{.sra} que tiverem sobrado na pasta e rode
+o \cmd{ipyrad -{}-download} de novo.
+\item \textbf{O arquivo de SNPs mudou de nome.} Quando o tutorial manda olhar o
+\arq{pedicularis.snps.phy}, na versão atual do ipyrad o arquivo é o \arq{pedicularis.snps} (o
+mesmo formato PHYLIP, só sem o \arq{.phy} no nome).
+\item \textbf{Cuidado com os parâmetros 25 e 26.} O tutorial muda o 26 (\cmd{trim\_loci}) para
+\cmd{0, 5, 0, 0}. O 25 (\cmd{trim\_reads}), logo acima, tem o mesmo formato: se o valor for parar
+nele, cada sequência é cortada para 5 pb e o passo 2 descarta todas
+(\cmd{No reads passed filtering}).
+\end{enumerate}
+
+% =====================================================================
+\section{Introdução}
+% =====================================================================
+
+\paragraph{As três matrizes.} O ipyrad escreve a mesma informação de vários jeitos. Vamos usar
+três:
+\begin{center}\small
+\begin{tabular}{@{}lp{7.6cm}c@{}}
+\toprule
+Arquivo & O que tem & Correção +ASC?\\
+\midrule
+\arq{pedicularis.phy} & todos os sítios de todos os loci, concatenados & não\\
+\arq{pedicularis.snps} & só os sítios variáveis: todos os SNPs de cada locus & sim\\
+\arq{pedicularis.usnps} & um SNP sorteado por locus (\emph{unlinked}) & sim\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Por que corrigir.} Uma matriz só de SNPs não tem sítios invariáveis, porque eles foram
+tirados. Se o modelo não souber disso, ele interpreta ``todo sítio variou'' como uma taxa de
+substituição altíssima, e os ramos saem longos demais. A correção do viés de averiguação
+(\emph{ascertainment bias correction}, \cmd{+ASC} no IQ-TREE \cite{lewis2001}) calcula a
+verossimilhança de cada sítio \emph{sabendo que ele é variável}: divide a verossimilhança do sítio
+pela probabilidade de um sítio qualquer ser variável,
+\[
+L_i^{\text{ASC}} = \frac{L_i}{1 - \left[L(\text{AAA}\ldots) + L(\text{CCC}\ldots) +
+L(\text{GGG}\ldots) + L(\text{TTT}\ldots)\right]},
+\]
+em que $L(\text{AAA}\ldots)$ é a verossimilhança de uma coluna com A em todas as amostras.
+
+\paragraph{Por que olhar além do \emph{bootstrap}.} Com centenas de milhares de sítios, o
+\emph{bootstrap} ultrarrápido (UFBoot) \cite{hoang2018} tende a dar 100 em quase todo nó, mesmo
+onde há conflito real entre os sítios (por separação incompleta de linhagens, por exemplo). O
+fator de concordância de sítio (sCF) \cite{minh2020,mo2023} mede outra coisa: a porcentagem dos
+sítios informativos que apoiam cada ramo, contra as duas alternativas. Vamos calcular os dois.
+
+% =====================================================================
+\section{Instalação e arquivos}
+% =====================================================================
+
+\paragraph{O IQ-TREE 3.} Os executáveis estão em \url{https://iqtree.github.io}, e o programa se
+chama \cmd{iqtree3}. Use a versão 3.1.4 ou mais nova: foi a dos testes desta apostila. Como as saídas do ipyrad estão no Linux (ou no WSL) ou no Mac, instale-o
+no mesmo lugar: baixe o arquivo do seu sistema (por exemplo,
+\arq{iqtree-3.1.4-Linux-intel.tar.gz} no Linux e no WSL) e descompacte com
+\cmd{tar xzf} seguido do nome do arquivo. O programa é o \arq{iqtree3} da pasta \arq{bin}.
+
+\paragraph{O \texttt{PATH}.} Até aqui, rodamos programas baixados com \cmd{./}, de dentro da
+pasta onde eles estão. O jeito mais prático é colocá-los numa pasta onde o terminal sempre
+procura comandos. Essa lista de pastas é a variável de ambiente \cmd{PATH}; veja quais são com
+\begin{Verbatim}
+echo $PATH
+\end{Verbatim}
+A pasta \arq{/usr/local/bin} está nessa lista no Linux, no WSL e no Mac. Mova o \arq{iqtree3}
+para lá (o \cmd{sudo} pede a senha de administrador; no WSL, é a senha que você criou ao instalar
+o Ubuntu):
+\begin{Verbatim}
+sudo mkdir -p /usr/local/bin
+sudo mv iqtree-3.1.4-Linux-intel/bin/iqtree3 /usr/local/bin/
+iqtree3 --version
+\end{Verbatim}
+O primeiro comando só cria a pasta, se ela ainda não existir (nos Macs com chip Apple, ela às
+vezes não existe). No segundo, troque \arq{iqtree-3.1.4-Linux-intel} pelo nome da pasta que
+saiu do arquivo do seu sistema. No Mac, antes do \cmd{mv}, rode \cmd{xattr -d com.apple.quarantine} seguido
+do caminho do \arq{iqtree3}, para tirar o bloqueio que o Mac põe em programas baixados. Agora o
+\cmd{iqtree3} funciona de qualquer pasta.
+
+\paragraph{Os arquivos.} Crie uma pasta para a prática e copie para ela as três matrizes, que
+ficam na pasta de saídas do ipyrad (ou use as da pasta da prática):
+\begin{Verbatim}
+mkdir iqtree
+cp analysis-ipyrad/pedicularis_outfiles/pedicularis.phy iqtree/
+cp analysis-ipyrad/pedicularis_outfiles/pedicularis.snps iqtree/
+cp analysis-ipyrad/pedicularis_outfiles/pedicularis.usnps iqtree/
+cd iqtree
+\end{Verbatim}
+
+\paragraph{O grupo externo.} As duas amostras de \emph{P. przewalskii} enraízam as árvores. Os
+nomes vêm com o número do SRA, e o IQ-TREE recebe os dois separados por vírgula, sem espaço:
+\begin{Verbatim}
+-o 32082_przewalskii_SRR1754729,33588_przewalskii_SRR1754727
+\end{Verbatim}
+Para conferir os nomes, olhe o começo de cada linha do \arq{pedicularis.snps} com
+\cmd{cut -c1-40 pedicularis.snps}.
+
+\paragraph{Os comandos.} Os comandos abaixo terminam algumas linhas com \cmd{\textbackslash}: é o
+jeito de quebrar um comando longo em várias linhas no terminal. Pode copiar assim mesmo, ou
+digitar tudo numa linha só, sem as barras.
+
+% =====================================================================
+\section{Análise 1: a matriz completa}
+% =====================================================================
+
+A primeira árvore usa todos os sítios e serve de referência para as outras duas. O IQ-TREE busca
+a árvore de máxima verossimilhança e calcula o UFBoot com 1.000 réplicas (\cmd{-B 1000}):
+\begin{Verbatim}
+iqtree3 -s pedicularis.phy -st DNA -m GTR+I+G4 -B 1000 -T AUTO \
+  -o 32082_przewalskii_SRR1754729,33588_przewalskii_SRR1754727 \
+  --prefix completo --seed 2026
+\end{Verbatim}
+\begin{itemize}
+\item \cmd{-st DNA}: avisa que os dados são DNA. Sem isso, o IQ-TREE para com o erro
+\cmd{cannot confidently detect the sequence data type}: a matriz tem tantos \cmd{N} (dados
+faltantes) e códigos de ambiguidade (os heterozigotos) que ele não tem certeza de que é DNA.
+\item \cmd{-m GTR+I+G4}: o modelo de substituição, fixado. Nas Análises 2 e 3, o IQ-TREE vai
+escolher o modelo sozinho, com o ModelFinder \cite{kalyaanamoorthy2017}; aqui, com 2,8 milhões
+de colunas, a escolha levaria horas. Usamos o modelo mais geral, o GTR, com variação de taxas
+entre sítios (\cmd{+G4}) e uma proporção de sítios invariáveis (\cmd{+I}), já que quase todos os
+sítios da matriz são constantes.
+\item \cmd{-T AUTO}: o IQ-TREE escolhe quantos núcleos do processador usar.
+\item \cmd{-{}-prefix}: o começo do nome de todos os arquivos de saída.
+\item \cmd{-{}-seed}: a semente dos números aleatórios, para todos chegarem ao mesmo resultado.
+\end{itemize}
+Esta é a análise mais demorada da prática: deixe-a rodando e, enquanto isso, faça as Análises 2
+e 3 em outra janela do terminal. Os principais arquivos de saída:
+\begin{itemize}
+\item \arq{completo.iqtree}: o relatório, com o modelo escolhido, o logaritmo da verossimilhança,
+o comprimento total da árvore e a árvore desenhada em texto;
+\item \arq{completo.treefile}: a árvore de máxima verossimilhança, com o UFBoot em cada nó;
+\item \arq{completo.log}: tudo o que apareceu na tela.
+\end{itemize}
+Abra o \arq{completo.treefile} no FigTree, enraíze nos dois \emph{P. przewalskii} e mostre os
+rótulos dos nós (\ui{Node Labels}).
+
+\questao No \arq{completo.iqtree}, quantos sítios a matriz tem? Quantos são constantes, quantos
+são informativos para parcimônia (\emph{parsimony-informative}) e quantos são
+\emph{singletons}? Qual proporção de sítios invariáveis o modelo estimou (\cmd{Proportion of
+invariable sites})? Compare com a proporção de sítios constantes.
+
+\begin{resposta}
+A matriz tem 2.826.933 sítios: 2.658.382 constantes (94,0\%), 73.991 informativos para
+parcimônia e 94.560 \emph{singletons}. A proporção de invariáveis estimada é 0,627, bem menor
+que os 94\% de colunas constantes: muitas colunas constantes são só sítios lentos que não
+mudaram nestas 13 amostras (o gama, com $\alpha = 0{,}79$, dá conta deles), e boa parte delas
+tem dados faltantes, o que as torna constantes com pouca informação.
+\end{resposta}
+
+\questao As amostras da mesma espécie formam clados? Quantos nós têm UFBoot abaixo de 95 (o
+limite que a documentação do IQ-TREE sugere)?
+
+\begin{resposta}
+Com o grupo externo, a árvore tem dois grandes clados: (\emph{superba},
+\emph{cyathophylla}) + \emph{cyathophylloides}, e \emph{thamnophila} + \emph{rex}. As duas
+\emph{cyathophylloides} formam um clado (100), assim como as cinco \emph{rex} (99).
+\textbf{As duas \emph{thamnophila} não formam um clado}: \cmd{30556\_thamno} é irmã de
+\emph{rex} (100), e \cmd{33413\_thamno} é irmã das duas (100). \emph{superba} e
+\emph{cyathophylla} têm uma amostra cada. Nenhum nó tem UFBoot abaixo de 95; o menor é 96,
+dentro de \emph{rex}.
+\end{resposta}
+
+% =====================================================================
+\section{Análise 2: só os SNPs, com +ASC}
+% =====================================================================
+
+Agora a matriz só de SNPs. O \cmd{+ASC} no fim do \cmd{-m MFP} faz o ModelFinder testar só
+modelos com a correção:
+\begin{Verbatim}
+iqtree3 -s pedicularis.snps -st DNA -m MFP+ASC -B 1000 -T AUTO \
+  -o 32082_przewalskii_SRR1754729,33588_przewalskii_SRR1754727 \
+  --prefix snps --seed 2026
+\end{Verbatim}
+
+\paragraph{O erro esperado.} O IQ-TREE vai parar logo no começo, com esta mensagem:
+\begin{Verbatim}[fontsize=\footnotesize]
+ERROR: For your convenience alignment with variable sites printed to snps.varsites.phy
+ERROR: Invalid use of +ASC because of 33197 invariant sites in the alignment
+\end{Verbatim}
+Mas o ipyrad não tinha tirado os sítios invariáveis? Tinha, só que ``variável'' não quer dizer a
+mesma coisa para os dois programas. Para o ipyrad, um sítio onde uma amostra é heterozigota
+(\cmd{R}, por exemplo, que é A ou G) já tem um SNP. Para o +ASC, a coluna só é variável se não
+puder ser explicada por uma única base: uma coluna só com \cmd{A}, \cmd{R} e \cmd{N} pode ser
+toda de A, e conta como invariável.
+
+O IQ-TREE já resolve: junto com o erro, ele grava um alinhamento só com as colunas realmente
+variáveis, no arquivo \arq{snps.varsites.phy} (o nome vem do \cmd{-{}-prefix}). Rode de novo
+com ele:
+\begin{Verbatim}
+iqtree3 -s snps.varsites.phy -st DNA -m MFP+ASC -B 1000 -T AUTO \
+  -o 32082_przewalskii_SRR1754729,33588_przewalskii_SRR1754727 \
+  --prefix snps --seed 2026 -redo
+\end{Verbatim}
+O \cmd{-redo} é importante. A tentativa que deu erro deixou um arquivo de checkpoint
+(\arq{snps.model.gz}), e, sem o \cmd{-redo}, o IQ-TREE tenta aproveitá-lo, mesmo ele sendo de
+outro alinhamento. Dependendo da versão, isso faz o programa travar no meio do ModelFinder, com
+um erro \cmd{Assertion ... failed} e \cmd{IQ-TREE CRASHES WITH SIGNAL ABORTED}. O \cmd{-redo}
+manda ignorar o checkpoint e começar do zero.
+
+\questao Quantas colunas o IQ-TREE tirou? Que fração das colunas do \arq{pedicularis.snps} isso
+representa? Compare o número de colunas que sobraram com o número de sítios variáveis da
+Análise 1 (informativos mais \emph{singletons}).
+
+\begin{resposta}
+O IQ-TREE tirou 33.197 colunas das 201.748 (16,5\%). Sobraram 168.551, que são
+exatamente os 73.991 informativos mais os 94.560 \emph{singletons} da Análise~1: os mesmos
+sítios variáveis, vistos pelos dois lados.
+\end{resposta}
+
+\questao Qual modelo o ModelFinder escolheu, e por qual critério? Compare o comprimento total da
+árvore (no \arq{.iqtree}) com o da Análise 1. Por que eles são tão diferentes, se os dados são
+os mesmos?
+
+\begin{resposta}
+O ModelFinder escolheu o TVM+ASC+G4, pelo BIC (é o critério padrão do IQ-TREE), quase
+empatado com o TVMe+ASC+G4 (pesos de BIC de 0,33 e 0,32). O comprimento total da árvore é de
+0,560 substituição por sítio, contra 0,117 na Análise~1, quase cinco vezes mais. Na Análise~1,
+o comprimento é médio sobre 2,8 milhões de sítios, 94\% deles constantes. Com o +ASC, o modelo
+só sabe que os sítios constantes foram tirados, não quantos: ele supõe que eram só os que o
+próprio modelo (com o gama) espera, que são muito menos do que os que existiam de verdade. Por
+isso, os comprimentos de ramo de uma matriz de SNPs não se comparam diretamente com os de uma
+matriz completa; as proporções entre os ramos, sim.
+\end{resposta}
+
+\questao (Opcional.) Rode a Análise 2 \emph{sem} a correção, com o modelo que o ModelFinder
+escolheu, mas sem o \cmd{+ASC} (para não esperar o ModelFinder de novo):
+\begin{Verbatim}
+iqtree3 -s snps.varsites.phy -st DNA -m TVM+G4 -B 1000 -T AUTO \
+  -o 32082_przewalskii_SRR1754729,33588_przewalskii_SRR1754727 \
+  --prefix snps_sem_asc --seed 2026
+\end{Verbatim}
+(Se o seu ModelFinder tiver escolhido outro modelo, use o seu, sem o \cmd{+ASC}.) O que acontece
+com o comprimento total da árvore? E com a topologia?
+
+\begin{resposta}
+Sem a correção, o comprimento total da árvore vai para 2,30 substituições por sítio, contra
+0,560 com o +ASC (quatro vezes mais) e 0,117 na matriz completa (20 vezes mais): sem saber que os
+sítios constantes foram tirados, o modelo explica ``todo sítio variou'' com taxas altíssimas. A
+topologia é a mesma (RF = 0), mas o UFBoot cai em três nós (\emph{rex}, 87;
+\cmd{30556\_thamno} + \emph{rex}, 76; \cmd{35236\_rex} + (\cmd{38362\_rex}, \cmd{39618\_rex}),
+83): um modelo errado também afeta o suporte.
+\end{resposta}
+
+% =====================================================================
+\section{Análise 3: um SNP por locus}
+% =====================================================================
+
+Os SNPs de um mesmo locus estão a poucas dezenas de pares de bases uns dos outros e, quase
+sempre, compartilham a mesma história genealógica. Na matriz de todos os SNPs, um locus com dez
+SNPs pesa dez vezes mais que um locus com um. O \arq{pedicularis.usnps} guarda um SNP sorteado
+por locus, mais perto da ideia de sítios independentes que o modelo assume:
+\begin{Verbatim}
+iqtree3 -s pedicularis.usnps -st DNA -m MFP+ASC -B 1000 -T AUTO \
+  -o 32082_przewalskii_SRR1754729,33588_przewalskii_SRR1754727 \
+  --prefix usnps --seed 2026
+\end{Verbatim}
+O mesmo erro do +ASC vai aparecer: rode de novo com o \arq{usnps.varsites.phy}, como na Análise 2,
+sem esquecer o \cmd{-redo}:
+\begin{Verbatim}
+iqtree3 -s usnps.varsites.phy -st DNA -m MFP+ASC -B 1000 -T AUTO \
+  -o 32082_przewalskii_SRR1754729,33588_przewalskii_SRR1754727 \
+  --prefix usnps --seed 2026 -redo
+\end{Verbatim}
+
+\questao Quantas colunas tem a matriz final, comparada à da Análise 2? O que aconteceu com os
+valores de UFBoot? A topologia mudou?
+
+\begin{resposta}
+A matriz final tem 31.992 colunas (o IQ-TREE tirou 6.960 das 38.952), cerca de um
+quinto das 168.551 da Análise~2. O UFBoot caiu em dois nós de \emph{rex}: o clado \emph{rex}
+foi de 100 para 97, e um nó novo, que junta \cmd{35236\_rex} a (\cmd{35855\_rex},
+\cmd{40578\_rex}), tem só 54. A topologia mudou nesse ponto: nas Análises 1 e 2,
+\cmd{35236\_rex} fica com (\cmd{38362\_rex}, \cmd{39618\_rex}), com 96.
+\end{resposta}
+
+% =====================================================================
+\section{Comparando as árvores}
+% =====================================================================
+
+\paragraph{As topologias.} A distância de Robinson-Foulds (RF) conta quantos clados estão numa
+árvore e não na outra; 0 quer dizer a mesma topologia. Junte as três árvores num arquivo e peça
+ao IQ-TREE as distâncias entre todos os pares:
+\begin{Verbatim}
+cat completo.treefile snps.treefile usnps.treefile > tres_arvores.tre
+iqtree3 -t tres_arvores.tre -rf_all
+\end{Verbatim}
+As distâncias ficam no \arq{tres_arvores.tre.rfdist}, numa matriz em que as árvores aparecem
+na ordem do arquivo (\cmd{Tree0} é a da matriz completa, \cmd{Tree1} a dos SNPs e \cmd{Tree2} a
+de um SNP por locus).
+
+\paragraph{Os números.} Preencha com os relatórios (\arq{.iqtree}) das três análises:
+\begin{center}\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+& Completa & Todos os SNPs & Um SNP por locus\\
+\midrule
+Colunas analisadas & & &\\
+Modelo & GTR+I+G4 & &\\
+Comprimento total da árvore & & &\\
+Nós com UFBoot $<$ 95 & & &\\
+Distância RF até a completa & 0 & &\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\questao Onde estão as diferenças entre as três árvores? Elas aparecem em nós com UFBoot alto ou
+baixo?
+
+\begin{resposta}
+As Análises 1 e 2 dão a mesma topologia (RF = 0); a Análise~3 difere das duas em um
+clado (RF = 2: um clado presente numa árvore e ausente na outra conta duas vezes, uma para cada
+lado). A única diferença é a posição de \cmd{35236\_rex}, dentro de \emph{rex}, justamente no
+nó com o menor UFBoot das Análises 1 e 2 (96) e no de 54 da Análise~3.
+\end{resposta}
+
+% =====================================================================
+\section{O fator de concordância de sítio}
+% =====================================================================
+
+Na árvore da matriz completa, vamos calcular o sCF de cada ramo. Para cada ramo, o IQ-TREE
+sorteia 100 quartetos de amostras em volta dele e, em cada quarteto, vê quais sítios apoiam o
+ramo e quais apoiam cada uma das duas alternativas. A árvore (\cmd{-te}) e o modelo são os da
+Análise 1:
+\begin{Verbatim}
+iqtree3 -te completo.treefile -s pedicularis.phy -st DNA -m GTR+I+G4 \
+  --scfl 100 -T AUTO --prefix concord --seed 2026
+\end{Verbatim}
+\begin{itemize}
+\item \arq{concord.cf.tree}: a árvore com o UFBoot e o sCF em cada nó, separados por uma barra
+(por exemplo, \cmd{100/44.6});
+\item \arq{concord.cf.stat}: uma tabela com uma linha por ramo, com o sCF e os dois fatores de
+discordância, \cmd{sDF1} e \cmd{sDF2} (a porcentagem dos sítios que apoiam cada alternativa), e o
+número médio de sítios informativos por quarteto (\cmd{sN});
+\item \arq{concord.cf.branch}: a mesma árvore, com o número de cada ramo (a coluna \cmd{ID} do
+\arq{concord.cf.stat}) no lugar dos suportes.
+\end{itemize}
+Abra o \arq{concord.cf.tree} e o \arq{concord.cf.branch} no FigTree, lado a lado, para saber a que
+ramo corresponde cada linha da tabela. (A árvore sai sem raiz: enraíze nos dois \emph{P.
+przewalskii}, como antes.)
+
+\paragraph{Como ler.} Em volta de cada ramo, há três arranjos possíveis dos quatro grupos de
+amostras. Um sCF perto de 33\% quer dizer que os sítios não preferem o ramo da árvore a nenhuma
+das alternativas; um sCF bem acima disso quer dizer que a maioria dos sítios concorda com ele.
+Um ramo pode ter UFBoot de 100 e sCF de 40\%: é o mais apoiado dos três arranjos, mas com muito
+conflito. Os dois fatores de discordância também contam uma história: se sDF1 e sDF2 são
+parecidos, o conflito é o esperado pela separação incompleta de linhagens; se um é bem maior que
+o outro, um dos arranjos alternativos tem apoio demais, e isso pode indicar fluxo gênico entre
+as linhagens desse arranjo.
+
+\questao Quais ramos têm UFBoot alto (95 ou mais) e sCF abaixo de 50\%? Eles estão entre
+espécies ou entre amostras da mesma espécie?
+
+\begin{resposta}
+Três ramos: \emph{thamnophila} 30556 + \emph{rex} (UFBoot 100, sCF 44,6\%), o clado
+\emph{rex} (99; 37,9\%) e \cmd{35236\_rex} + (\cmd{38362\_rex}, \cmd{39618\_rex}) (96;
+35,0\%). Os dois primeiros estão entre espécies (\emph{thamnophila} e \emph{rex}); o terceiro,
+dentro de \emph{rex}. Outros ramos com UFBoot de 100 também têm sCF modesto: (\emph{superba},
+\emph{cyathophylla}), 65,6\%; e esse par mais \emph{cyathophylloides}, 65,4\%. Só os ramos
+dentro de \emph{cyathophylloides} (99,9\%), o do grupo externo (99,7\%) e o de (\cmd{38362\_rex},
+\cmd{39618\_rex}) (96,1\%) têm sCF perto de 100.
+\end{resposta}
+
+\questao Para esses ramos, sDF1 e sDF2 são parecidos ou um é bem maior que o outro? O que isso
+sugere?
+
+\begin{resposta}
+No clado \emph{rex} + \cmd{30556\_thamno} (ramo 17 no \arq{concord.cf.branch}),
+sDF1 = 36,0\% e sDF2 = 19,4\%: uma das alternativas tem quase o dobro do apoio da outra, o que
+sugere fluxo gênico entre as linhagens desse arranjo (ou algum outro viés). No clado \emph{rex}
+(ramo 18), 26,4\% e 35,7\%: também assimétrico, e a alternativa mais apoiada fica perto do
+próprio sCF (37,9\%). No ramo 19, dentro de \emph{rex}, 33,4\% e 31,6\%, com sCF de 35,0\%: os
+três arranjos têm praticamente o mesmo apoio, o esperado para um ramo muito curto, com separação
+incompleta de linhagens e pouco sinal. Bom lembrar que \emph{thamnophila} e \emph{rex} são
+representadas por poucas amostras: o padrão é uma pista, não uma conclusão.
+\end{resposta}
+
+% =====================================================================
+\section{Na vida real}
+% =====================================================================
+
+\paragraph{Um segundo suporte.} O UFBoot é rápido e, com modelos adequados, bem calibrado: um
+clado com 95 é verdadeiro em cerca de 95\% dos casos. Mas ele pode superestimar o apoio quando o
+modelo está errado. Por isso, a documentação do IQ-TREE recomenda calcular junto o SH-aLRT
+(\cmd{-alrt 1000}) \cite{guindon2010}, um teste que compara cada ramo com os dois arranjos
+alternativos em volta dele, reamostrando os sítios. Os dois saem no mesmo rótulo do nó
+(SH-aLRT/UFBoot), e um clado é considerado confiável quando o SH-aLRT é pelo menos 80 e o UFBoot
+pelo menos 95. Numa análise para publicação, rodaríamos sempre os dois.
+
+\paragraph{A escolha do modelo.} Na Análise~1, fixamos o GTR+I+G4 porque o ModelFinder levaria
+horas numa matriz de 2,8 milhões de colunas. Numa análise para publicação, escolheríamos o modelo
+mesmo assim, deixando o computador trabalhar ou limitando os modelos testados (por exemplo, só
+variação de taxas por gama, com \cmd{-mrate G,I+G}).
+
+\paragraph{Além da concatenação.} Uma árvore de máxima verossimilhança de dados concatenados
+assume que todos os loci têm a mesma história. Com RAD-seq de espécies próximas, isso raramente
+é verdade, e o sCF mostra o tamanho do conflito. Numa análise para publicação, complementaríamos
+com métodos de árvore de espécies que lidam com essa discordância, como o SVDquartets ou o
+tetrad (das ferramentas de análise do ipyrad). O fator de concordância de gene (gCF) exigiria
+uma árvore por locus, e os loci de RAD-seq (cerca de 70 pb aqui) são curtos demais para dar
+árvores informativas.
+
+% =====================================================================
+\begin{thebibliography}{99}
+\bibitem{eaton2013} Eaton, D.~A.~R. \& Ree, R.~H. 2013. Inferring phylogeny and introgression
+using RADseq data: an example from flowering plants (\emph{Pedicularis}: Orobanchaceae).
+\emph{Systematic Biology} 62: 689--706.
+\bibitem{guindon2010} Guindon, S., Dufayard, J.-F., Lefort, V., Anisimova, M., Hordijk, W. \&
+Gascuel, O. 2010. New algorithms and methods to estimate maximum-likelihood phylogenies:
+assessing the performance of PhyML 3.0. \emph{Systematic Biology} 59: 307--321.
+\bibitem{hoang2018} Hoang, D.~T., Chernomor, O., von Haeseler, A., Minh, B.~Q. \& Vinh, L.~S.
+2018. UFBoot2: improving the ultrafast bootstrap approximation. \emph{Molecular Biology and
+Evolution} 35: 518--522.
+\bibitem{kalyaanamoorthy2017} Kalyaanamoorthy, S., Minh, B.~Q., Wong, T.~K.~F., von Haeseler, A.
+\& Jermiin, L.~S. 2017. ModelFinder: fast model selection for accurate phylogenetic estimates.
+\emph{Nature Methods} 14: 587--589.
+\bibitem{lewis2001} Lewis, P.~O. 2001. A likelihood approach to estimating phylogeny from
+discrete morphological character data. \emph{Systematic Biology} 50: 913--925.
+\bibitem{minh2020} Minh, B.~Q., Hahn, M.~W. \& Lanfear, R. 2020. New methods to calculate
+concordance factors for phylogenomic datasets. \emph{Molecular Biology and Evolution} 37:
+2727--2733.
+\bibitem{mo2023} Mo, Y.~K., Lanfear, R., Hahn, M.~W. \& Minh, B.~Q. 2023. Updated site
+concordance factors minimize effects of homoplasy and taxon sampling. \emph{Bioinformatics} 39:
+btac741.
+\bibitem{wong2025} Wong, T.~K.~F., Ly-Trong, N., Ren, H. \emph{et al.} 2025. IQ-TREE 3:
+phylogenomic inference software using complex evolutionary models. Preprint, EcoEvoRxiv,
+doi:10.32942/X2P62N.
+\end{thebibliography}
+
+\end{document}

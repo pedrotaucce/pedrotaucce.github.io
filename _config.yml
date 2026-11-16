@@ -132,17 +132,15 @@ bing_site_verification: # out your bing-site-verification ID (Bing Webmaster)
 # Blog
 # -----------------------------------------------------------------------------
 
-blog_name: The Beast # blog_name will be displayed in your blog page
-blog_description: Tips and insights on phylogenetics, phylogeography, and other topics related to biodiversity bioinformatics. # blog_description will be displayed in your blog page
 permalink: /blog/:year/:title/
 lsi: true # produce an index for related posts
 
 # Pagination
 pagination:
-  enabled: true
+  enabled: false
 
 related_blog_posts:
-  enabled: true
+  enabled: false
   max_related: 5
 
 # Giscus comments (RECOMMENDED)
@@ -199,6 +197,9 @@ collections:
   teaching:
     output: true
     permalink: /:collection/:path/
+  tutorials:
+    output: true
+    permalink: /:collection/:path/
 
 announcements:
   enabled: true
@@ -206,7 +207,7 @@ announcements:
   limit: 5 # leave blank to include all the news in the `_news` folder
 
 latest_posts:
-  enabled: true
+  enabled: false
   scrollable: true # adds a vertical scroll bar if there are more than 3 new posts items
   limit: 3 # leave blank to include all the blog posts
 
@@ -306,16 +307,14 @@ jekyll-archives:
     tag: "/blog/tag/:name/"
     category: "/blog/category/:name/"
 
-display_tags: ["BEAST", "MolecularClock", "Dating"] # these tags will be displayed on the front page of your blog
-display_categories: ["Phylogenetics"] # these categories will be displayed on the front page of your blog
 
 # -----------------------------------------------------------------------------
 # Jekyll Scholar
 # -----------------------------------------------------------------------------
 
 scholar:
-  last_name: [Taucce]
-  first_name: [Pedro, Pedro P. G., P. P. G.]
+  last_name: [Taucce, Taucci]
+  first_name: [Pedro, Pedro P. G., P. P. G., Pedro Paulo Goulart, Pedro P G, Pedro P.G.]
 
   style: apa
   locale: en
