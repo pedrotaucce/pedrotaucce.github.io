@@ -1,0 +1,557 @@
+% =====================================================================
+%  Árvore de espécies com o StarBEAST2
+%  Prática 10 -- Disciplina Métodos Computacionais (UNESP)
+%
+%  Compilar com pdfLaTeX (Overleaf: Menu > Compiler > pdfLaTeX).
+%
+%  VERSÃO: por padrão gera a versão do ALUNO (sem as notas do professor).
+%  Para a versão do PROFESSOR, troque \professorfalse por \professortrue
+%  na linha indicada abaixo, ou compile com
+%     pdflatex "\def\versaoprofessor{}\input{apostila_starbeast.tex}"
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\newif\ifprofessor
+\professorfalse            % <-- troque para \professortrue para incluir as notas do professor
+\ifdefined\versaoprofessor \professortrue \fi
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage[provide=*,brazilian]{babel}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{fancyvrb}
+\usepackage{upquote}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{comment}
+\usepackage{needspace}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\fvset{xleftmargin=1.5em,fontsize=\small}
+\setlist{itemsep=0.2em,topsep=0.4em}
+\setlength{\parskip}{0.35em}
+\setlength{\emergencystretch}{3em}
+\urlstyle{tt}
+
+\newcommand{\arq}[1]{\path{#1}}
+\newcommand{\ui}[1]{\textit{#1}}
+\newcommand{\tecla}[1]{\textsf{#1}}
+
+\ifprofessor
+  \specialcomment{resposta}{\begin{quote}\small\textbf{Para o professor.}\ }{\end{quote}}
+\else
+  \excludecomment{resposta}
+\fi
+
+\title{Árvore de espécies com o StarBEAST2\\[0.3em]
+\large Prática 10: árvore de espécies datada a partir de vários locos}
+\author{Disciplina Métodos Computacionais\\Universidade Estadual Paulista (UNESP)}
+\date{\ifprofessor Versão do professor (com notas)\else Versão do aluno\fi\\ Novembro de 2026}
+
+\begin{document}
+\maketitle
+
+\paragraph{Origem do material.} Esta apostila adapta o tutorial de StarBEAST2 de Felipe de M.
+Magalhães (Dia~4, Prática~2) da apostila \emph{Tutoriais: Filogeografia Estatística e Adaptação
+Ambiental} \cite{werneck2023} para um conjunto de dados de Phyzelaphryninae montado a partir de
+sequências do GenBank. A datação segue a Prática~6. As mudanças estão no
+Apêndice~\ref{ap:mudancas}.
+
+\paragraph{Arquivos.} A pasta \arq{pratica_starbeast} contém:
+\begin{itemize}
+\item \arq{dados/16S.nex}, \arq{dados/Tyr.nex}, \arq{dados/RAG1.nex} e \arq{dados/POMC.nex}:
+as quatro matrizes, já alinhadas, uma por loco;
+\item \arq{dados/especies.dat}: a espécie de cada sequência;
+\item \arq{ajuste_taxa.R}: o ajuste da \emph{prior} da taxa do 16S (o mesmo da Prática~6);
+\item \arq{desafio_arvore.R}: o script do desafio final (Seção~\ref{sec:desafio}).
+\end{itemize}
+
+\paragraph{Um aviso.} Esta é uma análise de tutorial, montada para rodar em menos de meia hora.
+Ao longo do texto, os quadros ``\textbf{Na vida real}'' indicam o que faríamos diferente numa
+análise para publicação.
+
+% =====================================================================
+\section{Introdução}
+% =====================================================================
+
+Até aqui, todas as árvores da disciplina foram estimadas a partir de uma matriz concatenada,
+como se todos os genes tivessem a mesma história. Mas cada loco tem a sua própria genealogia,
+a \emph{árvore de genes}, e ela nem sempre coincide com a história das espécies, a
+\emph{árvore de espécies}. A principal razão é a separação incompleta de linhagens
+(\emph{incomplete lineage sorting}): quando duas espécies se separam há pouco tempo, ou quando as
+populações ancestrais eram grandes, as cópias de um gene podem continuar misturadas por muitas
+gerações, e a árvore daquele gene pode mostrar um agrupamento diferente do das espécies
+\cite{degnan2009}.
+
+O modelo que descreve essa relação é o \emph{coalescente multiespécies}: as árvores de genes
+evoluem ``dentro'' da árvore de espécies, como linhas dentro de tubos, e coalescem (se juntam
+num ancestral comum) mais depressa ou mais devagar dependendo do tamanho das populações. O
+StarBEAST2 \cite{ogilvie2017}, um pacote do BEAST 2 \cite{bouckaert2019}, estima ao mesmo tempo
+a árvore de cada loco e a árvore de espécies que melhor explica todas elas. Para isso, ele
+precisa saber a qual espécie pertence cada sequência, e é bom ter mais de um indivíduo por
+espécie.
+
+Os dados desta prática são de Phyzelaphryninae, uma subfamília de rãzinhas de
+folhiço minúsculas com dois gêneros: \emph{Phyzelaphryne}, da Amazônia, e \emph{Adelophryne}, com
+espécies na Amazônia, no Escudo das Guianas e na Mata Atlântica \cite{fouquet2012mpe}. A
+filogenia do grupo mostrou três clados em \emph{Adelophryne}, um no norte da Amazônia e dois na
+Mata Atlântica (norte e sul), e sugeriu que a subfamília surgiu na Amazônia e chegou à Mata
+Atlântica no início do Mioceno \cite{fouquet2012mpe}. São 14
+espécies (12 de \emph{Adelophryne} e 2 de \emph{Phyzelaphryne}), de 1 a 4 indivíduos por espécie,
+e quatro locos: o 16S, mitocondrial, e três genes nucleares, tirosinase (Tyr), RAG1 e POMC. As
+sequências foram reunidas do GenBank; os números de acesso estão no Apêndice~\ref{ap:acessos}.
+
+% =====================================================================
+\section{Instalação}
+% =====================================================================
+
+\begin{enumerate}
+\item \textbf{BEAST 2, Tracer e FigTree.} Os mesmos da Prática~6. O BEAST traz também o
+\textbf{DensiTree}, na mesma pasta do BEAUti.
+\item \textbf{StarBEAST2.} Abra o BEAUti, vá em \ui{File > Manage Packages}, selecione
+\ui{starbeast2} e clique em \ui{Install/Upgrade}. Feche e abra o BEAUti de novo para que o
+pacote seja carregado.
+\item \textbf{R}, com o pacote \texttt{fitdistrplus} (Prática~6) e, para o desafio final, os
+pacotes \texttt{phytools} e \texttt{phyloch} (instruções no script \arq{desafio_arvore.R}).
+\end{enumerate}
+
+% =====================================================================
+\section{Os dados}
+% =====================================================================
+
+Desta vez, cada loco fica num arquivo NEXUS separado, porque cada um terá a sua árvore. Os
+nomes das sequências seguem o padrão
+\begin{Verbatim}
+A_baturitensis_JX298277        (16S)
+A_baturitensis_JX298096_a      (genes nucleares, cópia a)
+A_baturitensis_JX298096_b      (genes nucleares, cópia b)
+\end{Verbatim}
+com a inicial do gênero (\texttt{A} para \emph{Adelophryne}, \texttt{P} para
+\emph{Phyzelaphryne}), a espécie e um número de acesso do GenBank, que identifica o indivíduo.
+Nos genes nucleares, cada indivíduo aparece duas vezes, com \texttt{\_a} e \texttt{\_b}: são as
+duas cópias do gene (os dois alelos), separadas computacionalmente. O arquivo
+\arq{especies.dat} é uma tabela com duas colunas, separadas por tabulação: o nome da sequência e
+a sua espécie.
+
+\begin{center}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+& 16S & Tyr & RAG1 & POMC \\
+\midrule
+Sequências & 46 & 64 & 62 & 66 \\
+Sítios & 583 & 471 & 504 & 495 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Nem todas as espécies têm os quatro locos: falta a Tyr de \emph{A. amapaensis} e o RAG1 de
+\emph{A. nordestina}. O StarBEAST2 aceita isso, desde que cada espécie esteja em pelo menos um
+loco.
+
+% =====================================================================
+\section{Montando a análise no BEAUti}
+% =====================================================================
+
+\subsection{O modelo StarBEAST2}
+
+Abra o BEAUti e vá em \ui{File > Template > StarBeast2}. As abas mudam: aparecem \ui{Taxon
+sets}, \ui{Gene Ploidy} e \ui{Population Model}, que não existem no modelo padrão.
+
+\subsection{Partitions}
+
+\begin{enumerate}
+\item Clique no botão \ui{+}, no canto inferior esquerdo. Uma janela pergunta o que você quer
+adicionar: troque \ui{Add Morphological Data} (a opção que vem marcada) por \ui{Import
+Alignment} e clique em \ui{OK}.
+\item Na pasta \arq{dados}, selecione os quatro arquivos \arq{.nex} (clique no primeiro e, com
+\tecla{Ctrl}, nos outros) e clique em \ui{Open}. Não selecione o \arq{especies.dat}: ele não é
+uma matriz.
+\item O BEAUti mostra uma linha para cada loco: \verb|16S|, \verb|POMC|, \verb|RAG1| e
+\verb|Tyr|, com o número de sequências (\ui{Taxa}) e de sítios (\ui{Sites}) da tabela acima.
+\end{enumerate}
+
+Agora, os relógios. Para simplificar, os três genes nucleares vão compartilhar um único relógio;
+o 16S, que evolui bem mais rápido, terá o seu.
+Selecione as linhas \verb|POMC|, \verb|RAG1| e \verb|Tyr| (clique na primeira e, com
+\tecla{Shift}, na última) e clique em \ui{Link Clock Models}. Para facilitar a leitura,
+renomeie esse relógio: clique no nome na coluna \ui{Clock Model} de uma dessas linhas, apague,
+escreva \verb|nuclear| e tecle \tecla{Enter}.
+
+Não clique em \ui{Link Trees}: cada loco deve ter a sua árvore de genes. Os modelos de
+substituição (\ui{Site Model}) também ficam separados.
+
+\begin{quote}\small
+\textbf{Na vida real.} Os relógios não deveriam ser ligados: cada gene tem a sua própria taxa
+de evolução, e o ideal é deixar um relógio para cada loco. Ligamos os três genes nucleares só
+para a análise ter menos parâmetros e terminar no tempo da aula.
+\end{quote}
+
+\begin{resposta}
+Se o aluno renomear e o nome não ``pegar'', não tem problema: o relógio continua ligado e só o
+nome muda (por exemplo, \verb|strictClockRate.c:POMC| em vez de
+\verb|strictClockRate.c:nuclear|).
+\end{resposta}
+
+\subsection{Taxon sets}
+
+Aqui dizemos ao StarBEAST2 a qual espécie pertence cada sequência. Clique em \ui{Guess}, marque
+\ui{read from file}, clique em \ui{Browse}, escolha o \arq{especies.dat} e clique em \ui{OK}. A
+coluna \ui{Species/Population} passa a mostrar a espécie de cada sequência. Role a lista para
+conferir que nenhuma linha ficou vazia: devem ser 14 espécies.
+
+\subsection{Tip Dates}
+
+Deixe como está.
+
+\subsection{Gene Ploidy}
+
+A \emph{ploidia} indica quantas cópias de cada loco há em cada indivíduo, comparado com os
+outros locos. Ela importa porque o tempo até as cópias de um gene coalescerem depende do número
+de cópias na população. Nos genes nucleares, cada indivíduo tem duas cópias (ploidia 2, o
+padrão). O DNA mitocondrial é herdado só da mãe e tem uma cópia por indivíduo: o número efetivo
+de cópias na população é um quarto do de um gene nuclear. Por isso, troque a ploidia de
+\verb|geneTree.t:16S| para \verb|0.5|; deixe os três genes nucleares em \verb|2.0|.
+
+\subsection{Population Model}
+
+Deixe \ui{Analytical Population Size Integration}, o padrão. Com essa opção, o StarBEAST2 não
+estima o tamanho de cada população separadamente: ele ``integra'' sobre todos os valores
+possíveis, o que deixa a análise bem mais rápida. O único parâmetro de população que aparece no
+Tracer é a média, \verb|popMean|.
+
+\subsection{Site Model}\label{sec:sitemodel}
+
+Desta vez, vamos usar o mesmo modelo nos quatro locos: HKY com variação de taxas entre sítios
+(Gama). Na lista da esquerda, clique em \verb|16S| e, no \ui{Gamma Site Model}:
+\begin{enumerate}
+\item \textbf{desmarque} \ui{estimate} em \ui{Substitution Rate}, que vem marcado, e deixe o
+valor em 1,0;
+\item em \ui{Gamma Category Count}, digite \verb|4| e marque \ui{estimate} em \ui{Shape};
+\item em \ui{Subst Model}, escolha \ui{HKY}. Deixe \ui{Kappa} com \ui{estimate} marcado e
+\ui{Frequencies} em \ui{Estimated}.
+\end{enumerate}
+Repita para \verb|POMC|, \verb|RAG1| e \verb|Tyr|. Se a caixa \ui{estimate} de
+\ui{Substitution Rate} voltar a se marcar sozinha, desmarque \ui{Automatic set fix mean
+substitution rate flag} no menu \ui{Mode} e desmarque a caixa de novo.
+
+\begin{quote}\small
+\textbf{Por que não estimar a Substitution Rate?} Ela é a taxa relativa de cada loco, e quem
+cuida das taxas aqui são os relógios (Seção~\ref{sec:clock}). Se as duas forem estimadas ao mesmo
+tempo, os dados só ``enxergam'' o produto entre elas, e a cadeia não converge.
+\end{quote}
+
+\begin{quote}\small
+\textbf{Na vida real.} O ideal seria não fixar nada disso. Primeiro, deixar o bModelTest
+\cite{bouckaert2017} escolher o modelo de cada loco, como na Prática~6. Segundo, estimar as
+taxas relativas dos genes nucleares: marcar \ui{estimate} em \ui{Substitution Rate} só em
+\verb|POMC|, \verb|RAG1| e \verb|Tyr|, deixando o 16S fixo em 1, para que cada gene nuclear tenha a
+sua taxa dentro do relógio compartilhado. Tiramos o bModelTest porque, nos nossos testes, vários
+parâmetros dele não convergiram em $10^7$ gerações; e deixamos as taxas fixas para simplificar
+o passo a passo.
+\end{quote}
+
+\subsection{Clock Model}\label{sec:clock}
+
+Usaremos o relógio estrito (\ui{Strict Clock}), o padrão. Como na Prática~6, o tempo vem de uma
+\emph{prior} para a taxa do 16S, ajustada a quatro estimativas publicadas para anuros
+\cite{lemmon2007,fouquet2012sb,gehara2017,dufresnes2022} pelo script \arq{ajuste_taxa.R}: média
+0,00483 substituições por sítio por milhão de anos, com \verb|meanlog| $= -5{,}374295$ e
+\verb|sdlog| $= 0{,}304072$. A taxa dos genes nucleares será estimada a partir dos dados.
+\begin{enumerate}
+\item Na lista da esquerda, clique em \verb|16S|, digite \verb|0.0048| em \ui{Clock.rate} e
+marque \ui{estimate}.
+\item Clique em \verb|nuclear|, digite \verb|0.001| em \ui{Clock.rate} e marque \ui{estimate}.
+\end{enumerate}
+Se a caixa \ui{estimate} estiver cinza, desmarque \ui{Automatic set clock rate} no menu
+\ui{Mode} e tente de novo.
+
+\begin{quote}\small
+\textbf{Na vida real.} Como na Prática~6, um relógio relaxado seria mais realista numa árvore
+com dezenas de milhões de anos. O StarBEAST2 tem relógios relaxados próprios para a árvore de
+espécies (na lista de \ui{Clock Model}), mas eles têm mais parâmetros e demoram mais para
+convergir.
+\end{quote}
+
+\subsection{Priors}\label{sec:priors}
+
+\begin{enumerate}
+\item Deixe a \emph{prior} da árvore de espécies no \ui{Yule Model}, o padrão, e as
+\emph{priors} de \verb|popMean.Species| (\ui{1/X}) e \verb|speciationRate.t:Species|
+(\ui{Uniform}) como estão.
+
+\item \textbf{Taxa do 16S.} Na linha \verb|strictClockRate.c:16S|, troque a distribuição por
+\ui{Log Normal} e clique no triângulo à esquerda do nome para abrir os detalhes.
+\textbf{Desmarque} \ui{Mean In Real Space}, que vem marcado, e digite \verb|M| $= -5.374295$ e
+\verb|S| $= 0.304072$. O gráfico ao lado deve mostrar mediana 0,00463 e média 0,00485. Compare
+com o gráfico feito pelo script \arq{ajuste_taxa.R}.
+
+\item \textbf{Taxa nuclear.} Na linha \verb|strictClockRate.c:nuclear|, troque por \ui{Log
+Normal}, desmarque \ui{Mean In Real Space} e digite \verb|M| $= -6.907755$ e \verb|S| $= 1.0$.
+Esse $M$ é o logaritmo de 0,001: a mediana da \emph{prior} é 0,001, cerca de um quinto da taxa
+do 16S, porque genes nucleares codificantes evoluem bem mais devagar que o DNA mitocondrial. O
+desvio é grande ($S = 1$, intervalo de 95\% de 0,00014 a 0,0071) porque não temos uma boa
+estimativa para esses genes: a \emph{prior} só delimita a região, e quem decide são os dados. O
+fim do script \arq{ajuste_taxa.R} calcula esses valores.
+\end{enumerate}
+
+\begin{quote}\small
+\textbf{Por que desmarcar Mean In Real Space?} Com a caixa marcada, o BEAUti interpreta $M$ como
+a média da própria taxa, e não como a média do seu logaritmo, que é o que o \texttt{fitdist}
+calcula. Um $M$ negativo, como o nosso, nem faz sentido como taxa.
+\end{quote}
+
+\subsection{MCMC}
+
+Deixe \ui{Chain Length} em \verb|10000000| (dez milhões de gerações), o padrão. Agora, o
+intervalo dos registros: clique no triângulo de cada registro (\ui{tracelog},
+\ui{speciesTreeLogger}, \ui{screenlog} e os quatro \ui{treelog}, um para a árvore de cada
+loco) e troque \ui{Log Every} de 5000 para \verb|1000|. Assim, cada arquivo terá 10.000
+amostras. Salve o arquivo com \ui{File > Save As}, com o nome \arq{Phyzelaphryninae.xml}, na
+pasta \arq{pratica_starbeast}.
+
+\begin{quote}\small
+\textbf{Na vida real.} Uma corrida só não basta. O certo é rodar pelo menos duas réplicas
+independentes, conferir no Tracer se elas chegam aos mesmos valores e se todos os parâmetros têm
+ESS acima de 200, e aumentar a cadeia se for preciso. Análises com mais espécies e locos podem
+precisar de centenas de milhões de gerações.
+\end{quote}
+
+% =====================================================================
+\section{Rodando o BEAST}
+% =====================================================================
+
+Abra o BEAST, escolha o arquivo \arq{Phyzelaphryninae.xml} em \ui{Input file} e clique em
+\ui{Run}. A análise leva de 15 a 30 minutos, dependendo do computador. Ao terminar, a pasta terá seis arquivos novos:
+\begin{itemize}
+\item \arq{starbeast.log}: os valores dos parâmetros a cada 1000 gerações;
+\item \arq{species.trees}: as árvores de espécies, a cada 1000 gerações;
+\item \arq{16S.trees}, \arq{Tyr.trees}, \arq{RAG1.trees} e \arq{POMC.trees}: as árvores de
+genes, também a cada 1000 gerações.
+\end{itemize}
+
+\begin{resposta}
+Duas corridas rodando ao mesmo tempo levaram cerca de 13 minutos cada, e cada uma gerou cerca
+de 120~MB de arquivos, quase tudo nas árvores de genes. Os resultados esperados estão no
+gabarito.
+\end{resposta}
+
+% =====================================================================
+\section{Resultados}
+% =====================================================================
+
+\paragraph{Tracer.} Carregue o \arq{starbeast.log} e olhe a coluna \ui{ESS}: praticamente todos os valores
+devem passar de 200. A exceção mais comum são as verossimilhanças de alguns genes
+(\verb|treeLikelihood.16S|, por exemplo), que podem ficar um pouco abaixo sem afetar a árvore
+de espécies. Veja também:
+\begin{itemize}
+\item \verb|TreeHeight.Species|: a idade da raiz da árvore de espécies, em milhões de anos;
+\item \verb|strictClockRate.c:16S| e \verb|strictClockRate.c:nuclear|: as taxas dos dois
+relógios. Quantas vezes o 16S é mais rápido que os genes nucleares?
+\item \verb|popMean.Species|: o tamanho médio das populações, numa escala que combina tamanho
+populacional e tempo de geração.
+\end{itemize}
+
+\begin{resposta}
+Valores da semente 1 (10\% de \emph{burn-in}): \verb|TreeHeight.Species| 74,1~Ma (95\% HPD
+31,2--123,1; ESS 3199); \verb|strictClockRate.c:16S| 0,0056 (0,0028--0,0089; ESS 6317);
+\verb|strictClockRate.c:nuclear| 0,00058 (0,00027--0,00096; ESS 4303), ou seja, o 16S evolui
+cerca de 9,6 vezes mais rápido; \verb|popMean.Species| 2,38 (ESS 912). Só
+\verb|treeLikelihood.16S| (197 e 114 nas sementes 1 e 2) e \verb|treeLikelihood.POMC| (158 na
+semente 2) ficaram abaixo de 200.
+\end{resposta}
+
+\paragraph{DensiTree.} Abra o DensiTree, vá em \ui{File > Load} e escolha o
+\arq{species.trees}. Ele desenha todas as árvores amostradas umas sobre as outras: onde elas
+concordam, as linhas se sobrepõem e formam um traço forte; onde discordam, se espalham numa
+``nuvem''. É uma forma rápida de ver em que partes da árvore há incerteza. Se quiser, faça o
+mesmo com as árvores de genes (por exemplo, \arq{16S.trees}) e compare.
+
+\begin{resposta}
+A nuvem mostra bem os grupos firmes (os três clados de \emph{Adelophryne} e o par de
+\emph{Phyzelaphryne}) e a incerteza na relação entre os três clados de \emph{Adelophryne}.
+\end{resposta}
+
+\paragraph{TreeAnnotator.} Como na Prática~6: \ui{Burn in percentage} 10, \ui{Maximum clade
+credibility tree} e \ui{Mean heights}. Em \ui{Input Tree File}, escolha \arq{species.trees}; em
+\ui{Output File}, escreva \arq{Phyzelaphryninae.tre}. Clique em \ui{Run}.
+
+\paragraph{FigTree.} Abra o \arq{Phyzelaphryninae.tre} e mostre, como na Prática~6, a
+probabilidade posterior nos nós (\ui{Node Labels}, \ui{posterior}), as barras de 95\% HPD das
+idades (\ui{Node Bars}, \ui{height\_95\%\_HPD}) e o eixo de tempo invertido (\ui{Scale Axis},
+\ui{Reverse axis}). Repare que, ao contrário das práticas anteriores, os terminais agora são
+espécies, e não sequências.
+
+\begin{resposta}
+Árvore esperada (semente 1): \emph{Phyzelaphryne} (PP 1,00, cerca de 22~Ma) e
+\emph{Adelophryne} (PP 1,00, cerca de 57~Ma) separados na raiz (cerca de 74~Ma).
+\emph{Adelophryne} tem três clados bem sustentados: o do norte da Amazônia (\emph{A. adiastola},
+\emph{A. amapaensis}, \emph{A. gutturosa} e \emph{A. patamona}; PP 1,00, cerca de 43~Ma), o do
+norte da Mata Atlântica (\emph{A. baturitensis}, \emph{A. maranguapensis}, \emph{A.
+nordestina} e \emph{A. pachydactyla}; PP 1,00, cerca de 28~Ma) e o do sul da Mata Atlântica
+(\emph{A. glandulata}, \emph{A. mucronata}, \emph{A.} sp.~4 e \emph{A.} sp.~8; PP 1,00, cerca
+de 24~Ma). A relação entre os três fica indefinida: na semente 1, a árvore MCC junta os dois
+clados da Mata Atlântica (PP 0,68); na semente 2, junta o amazônico ao do sul da Mata Atlântica
+(PP 0,55). Bom exemplo de nó que os dados não resolvem (detalhes no gabarito).
+\end{resposta}
+
+% =====================================================================
+\section{Desafio: a árvore no R}\label{sec:desafio}
+% =====================================================================
+
+O FigTree é ótimo para explorar a árvore, mas, para uma figura de artigo, muita gente prefere o
+R, em que tudo fica registrado num script. O \arq{desafio_arvore.R} desenha a árvore de espécies
+datada sobre as épocas geológicas, com as barras de 95\% HPD das idades e um círculo em cada nó,
+preto para probabilidade posterior acima de 0,95 e cinza entre 0,5 e 0,95.
+
+\begin{enumerate}
+\item Copie o \arq{desafio_arvore.R} para a pasta onde está o \arq{Phyzelaphryninae.tre}.
+\item Abra o script no RStudio e vá em \ui{Session > Set Working Directory > To Source File
+Location}.
+\item Instale os pacotes (só na primeira vez), com as linhas indicadas no começo do script. O
+\texttt{phyloch} não está no CRAN: ele é instalado do GitHub, pelo pacote \texttt{remotes}.
+\item Rode o script. Ele mostra a árvore na tela e salva os arquivos
+\arq{Phyzelaphryninae.pdf} e \arq{Phyzelaphryninae.svg}.
+\end{enumerate}
+
+Conseguiu? Então tente:
+\begin{enumerate}[resume]
+\item trocar a cor das barras de HPD (\verb|col = adjustcolor("blue", ...)|) para cinza;
+\item mudar o limite de 0,95 para 0,85 e ver quais nós mudam de cor;
+\item descobrir em que época geológica cada um dos três clados de \emph{Adelophryne} começou a
+se diversificar.
+\end{enumerate}
+
+\begin{resposta}
+O script foi adaptado do script do professor e testado por ele no R; a figura de referência está
+no gabarito. O \texttt{read.beast} do \texttt{phyloch} só lê as estatísticas dos nós se a árvore
+se chamar \verb|TREE1|, e o script já faz essa troca numa cópia temporária. Erros mais prováveis:
+falta de algum pacote (\texttt{XML} e \texttt{colorspace} são dependências do \texttt{phyloch})
+ou o \arq{Phyzelaphryninae.tre} fora da pasta de trabalho.
+\end{resposta}
+
+% =====================================================================
+\appendix
+\section{Problemas comuns}\label{ap:problemas}
+% =====================================================================
+
+\begin{description}[style=nextline,leftmargin=1.5em]
+\item[\ui{File > Template} não mostra \ui{StarBeast2}] O pacote não foi instalado, ou o BEAUti
+não foi reaberto depois da instalação.
+\item[O BEAUti pergunta sobre dados morfológicos (Mkv)] A opção \ui{Add Morphological Data}
+ficou marcada ao clicar em \ui{+}. Cancele e escolha \ui{Import Alignment}. Se o BEAUti travar,
+feche e comece de novo.
+\item[Erro \ui{Unsupported sequence file}] Algum arquivo que não é matriz (como o
+\arq{especies.dat}) foi selecionado junto com os \arq{.nex}. Feche a mensagem; as quatro
+matrizes são importadas mesmo assim.
+\item[A coluna \ui{Species/Population} tem linhas vazias] O \arq{especies.dat} foi editado e
+perdeu a tabulação, ou algum nome de sequência foi alterado.
+\item[A taxa do relógio não pode ser estimada] Desmarque \ui{Automatic set clock rate} no menu
+\ui{Mode}.
+\item[Aparece \texttt{mutationRate} no Tracer, com ESS baixo] A caixa \ui{estimate} de
+\ui{Substitution Rate} ficou marcada em algum loco (Seção~\ref{sec:sitemodel}).
+\item[Não aparece \texttt{kappa} no Tracer] O modelo ficou no padrão, JC69: a escolha de
+\ui{HKY} em \ui{Subst Model} não foi feita em algum loco.
+\item[As idades saem enormes ou minúsculas] \ui{Mean In Real Space} ficou marcado em alguma
+\emph{prior} de taxa.
+\item[O BEAST avisa que o arquivo \arq{.log} já existe] Rode a nova réplica em outra pasta, ou
+escolha a opção de sobrescrever.
+\end{description}
+
+% =====================================================================
+\section{Alterações em relação ao tutorial original}\label{ap:mudancas}
+% =====================================================================
+
+\begin{enumerate}
+\item \textbf{Dados.} No lugar dos dados do tutorial original, 14 espécies de Phyzelaphryninae
+com um loco mitocondrial (16S) e três nucleares (Tyr, RAG1 e POMC), todos do GenBank, com no
+máximo quatro indivíduos por espécie e loco.
+\item \textbf{Datação.} Relógio estrito com a \emph{prior} lognormal da taxa do 16S da
+Prática~6 e um relógio nuclear único, estimado com uma \emph{prior} larga.
+\item \textbf{Simplificações para a aula.} Relógio estrito, Yule, integração analítica dos
+tamanhos populacionais, um relógio único para os genes nucleares, o mesmo modelo de
+substituição (HKY + Gama) nos quatro locos e uma réplica só, com quadros indicando o que seria
+feito numa análise real.
+\item \textbf{Visualização.} Inclusão do DensiTree e de um desafio para desenhar a árvore datada
+no R.
+\end{enumerate}
+
+\needspace{0.45\textheight}
+% =====================================================================
+\section{Números de acesso do GenBank}\label{ap:acessos}
+% =====================================================================
+
+Nos genes nucleares, cada número corresponde a um indivíduo, representado na matriz pelas suas
+duas cópias (\texttt{\_a} e \texttt{\_b}).
+
+\begin{center}
+\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}>{\raggedright}p{2.6cm}>{\raggedright}p{3.2cm}>{\raggedright}p{2.95cm}%
+>{\raggedright}p{2.95cm}>{\raggedright\arraybackslash}p{2.95cm}@{}}
+\toprule
+Espécie & 16S & Tyr & RAG1 & POMC \\
+\midrule
+\emph{A. adiastola} & JX298299 & JX298221 & JX298167 & JX298121 \\
+\emph{A. amapaensis} & JX298295 & -- & JX298162 & JX298116 \\
+\emph{A. baturitensis} & JX298277, JX298278, JX298279, JX298280 & JX298197, JX298199, JX298201, JX298202 & JX298145, JX298147, JX298149, JX298150 & JX298096, JX298098, JX298100, JX298101 \\
+\emph{A. glandulata} & JX298287, JX298288, JX298289, MH304347 & JX298208, JX298209, JX298210, JX298211 & JX298154, JX298155 & JX298107, JX298108, JX298109, JX298110 \\
+\emph{A. gutturosa} & JX298300, JX298301, JX298302 & JX298222, JX298223, JX298224 & JX298168, JX298169, JX298170 & JX298122, JX298123, JX298124 \\
+\emph{A. maranguapensis} & JX298285, JX298286, KU495097, KU495098 & JX298206, JX298207 & JX298152, JX298153 & JX298105 \\
+\emph{A. mucronata} & JX298291, JX298292, MH304341, MH304342 & JX298213, JX298214 & JX298158, JX298159 & JX298112, JX298113 \\
+\emph{A. nordestina} & JX298284, MT731282, MT731283, MT731284 & JX298205 & -- & JX298104 \\
+\emph{A. pachydactyla} & JX298283, MH304343, MH304344, MH304345 & JX298204 & JX298151 & JX298103 \\
+\emph{A. patamona} & JX298296, JX298297, JX298298 & JX298218, JX298219, JX298220 & JX298163, JX298164, JX298165, JX298166 & JX298117, JX298118, JX298119, JX298120 \\
+\emph{A.} sp.~4 & JX298290, MH304348 & JX298212 & JX298157 & JX298111 \\
+\emph{A.} sp.~8 & JX298293, JX298294, MH304333, MH304334 & JX298215, JX298216 & JX298160, JX298161 & JX298114, JX298115 \\
+\emph{P. miriamae} & EU186689, JX298303, JX298304, JX298305 & JX298225, JX298226, JX298228, JX298229 & JX298171, JX298172, JX298174, JX298175 & JX298125, JX298126, JX298128, JX298129 \\
+\emph{P. nimio} & JX298308, JX298309, JX298310, JX298311 & JX298230, JX298231, JX298233, JX298235 & JX298176, JX298177, JX298179, JX298181 & JX298130, JX298131, JX298133, JX298134 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{resposta}
+Critérios da seleção: só sequências com número de acesso do GenBank; no máximo quatro
+indivíduos por espécie e loco, dando preferência, nos genes nucleares, aos indivíduos com os
+três genes. Foi excluído o indivíduo ROM39578, cuja sequência de RAG1 (GQ345280), atribuída a
+\emph{A. gutturosa}, é idêntica às de \emph{A. patamona}. Detalhes no gabarito.
+\end{resposta}
+
+\begin{thebibliography}{9}
+\bibitem{bouckaert2017} Bouckaert, R.~R. \& Drummond, A.~J. 2017. bModelTest: Bayesian
+phylogenetic site model averaging and model comparison. \emph{BMC Evolutionary Biology} 17: 42.
+\bibitem{bouckaert2019} Bouckaert, R. \emph{et al.} 2019. BEAST 2.5: an advanced software
+platform for Bayesian evolutionary analysis. \emph{PLoS Computational Biology} 15(4): e1006650.
+\bibitem{degnan2009} Degnan, J.~H. \& Rosenberg, N.~A. 2009. Gene tree discordance,
+phylogenetic inference and the multispecies coalescent. \emph{Trends in Ecology \& Evolution}
+24(6): 332--340.
+\bibitem{dufresnes2022} Dufresnes, C. \emph{et al.} 2022. Shedding light on taxonomic chaos:
+diversity and distribution of South Asian skipper frogs (Anura, Dicroglossidae,
+\emph{Euphlyctis}). \emph{Systematics and Biodiversity} 20(1): 2102686.
+\bibitem{fouquet2012mpe} Fouquet, A., Loebmann, D., Castroviejo-Fisher, S., Padial, J.~M.,
+Orrico, V.~G.~D., Lyra, M.~L., Roberto, I.~J., Kok, P.~J.~R., Haddad, C.~F.~B. \& Rodrigues,
+M.~T. 2012. From Amazonia to the Atlantic forest: molecular phylogeny of Phyzelaphryninae frogs
+reveals unexpected diversity and a striking biogeographic pattern emphasizing conservation
+challenges. \emph{Molecular Phylogenetics and Evolution} 65(2): 547--561.
+\bibitem{fouquet2012sb} Fouquet, A., Noonan, B.~P., Rodrigues, M.~T., Pech, N., Gilles, A. \&
+Gemmell, N.~J. 2012. Multiple Quaternary refugia in the eastern Guiana Shield revealed by
+comparative phylogeography of 12 frog species. \emph{Systematic Biology} 61(3): 461--489.
+\bibitem{gehara2017} Gehara, M., Barth, A., Oliveira, E.~F., Costa, M.~A., Haddad, C.~F.~B.
+\& Vences, M. 2017. Model-based analyses reveal insular population diversification and cryptic
+frog species in the \emph{Ischnocnema parva} complex in the Atlantic forest of Brazil.
+\emph{Molecular Phylogenetics and Evolution} 112: 68--78.
+\bibitem{lemmon2007} Lemmon, E.~M., Lemmon, A.~R. \& Cannatella, D.~C. 2007. Geological and
+climatic forces driving speciation in the continentally distributed trilling chorus frogs
+(\emph{Pseudacris}). \emph{Evolution} 61(9): 2086--2103.
+\bibitem{ogilvie2017} Ogilvie, H.~A., Bouckaert, R.~R. \& Drummond, A.~J. 2017. StarBEAST2
+brings faster species tree inference and accurate estimates of substitution rates.
+\emph{Molecular Biology and Evolution} 34(8): 2101--2114.
+\bibitem{werneck2023} Werneck, F.~P. \emph{et al.} 2023. \emph{Tutoriais: Filogeografia
+Estatística e Adaptação Ambiental}. Repositório Institucional do INPA.
+\url{https://repositorio.inpa.gov.br/handle/1/40376}.
+\end{thebibliography}
+
+\end{document}

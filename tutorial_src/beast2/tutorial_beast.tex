@@ -1,0 +1,395 @@
+% =====================================================================
+%  Árvore datada com o BEAST 2.7
+%  Prática 6 -- Disciplina Métodos Computacionais (UNESP)
+%
+%  Compilar com pdfLaTeX (Overleaf: Menu > Compiler > pdfLaTeX).
+%
+%  VERSÃO: por padrão gera a versão do ALUNO (sem respostas).
+%  Para a versão do PROFESSOR (com gabarito), troque \professorfalse
+%  por \professortrue na linha indicada abaixo, ou compile com
+%     pdflatex "\def\versaoprofessor{}\input{apostila_beast.tex}"
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\newif\ifprofessor
+\professorfalse            % <-- troque para \professortrue para incluir o gabarito
+\ifdefined\versaoprofessor \professortrue \fi
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage[provide=*,brazilian]{babel}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{fancyvrb}
+\usepackage{upquote}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{comment}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\fvset{xleftmargin=1.5em,fontsize=\small}
+\setlist{itemsep=0.2em,topsep=0.4em}
+\setlength{\parskip}{0.35em}
+\setlength{\emergencystretch}{3em}
+\urlstyle{tt}
+
+\newcommand{\arq}[1]{\path{#1}}
+\newcommand{\ui}[1]{\textit{#1}}
+\newcommand{\tecla}[1]{\textsf{#1}}
+
+\ifprofessor
+  \specialcomment{resposta}{\begin{quote}\small\textbf{Gabarito.}\ }{\end{quote}}
+\else
+  \excludecomment{resposta}
+\fi
+
+\title{Árvore datada com o BEAST 2.7\\[0.3em]
+\large Prática 6: árvore bayesiana datada com relógio molecular}
+\author{Disciplina Métodos Computacionais\\Universidade Estadual Paulista (UNESP)}
+\date{\ifprofessor Versão do professor (com gabarito)\else Versão do aluno\fi\\ Novembro de 2026}
+
+\begin{document}
+\maketitle
+
+\paragraph{Origem do material.} Esta apostila adapta o tutorial \emph{Building a calibrated gene
+tree with BEAST 2.7} (\url{https://labesta.org/blog/2024/calibrated_gene_tree/}) para a matriz
+de Hylodidae das práticas anteriores, dividida em duas partições (16S e COI). As mudanças estão
+no Apêndice~\ref{ap:mudancas}.
+
+\paragraph{Arquivos.} A pasta \arq{pratica_beast} contém a matriz \arq{hylodidae_concatenado.nex}
+(Prática~4), o arquivo \arq{particoes.txt} (Prática~4) e o script \arq{ajuste_taxa.R}.
+
+\paragraph{Um aviso.} Esta é uma análise de tutorial, montada para rodar em poucos minutos.
+Ao longo do texto, os quadros ``\textbf{Na vida real}'' indicam o que faríamos diferente numa
+análise para publicação.
+
+% =====================================================================
+\section{Introdução}
+% =====================================================================
+
+O BEAST (\emph{Bayesian Evolutionary Analysis Sampling Trees}) \cite{bouckaert2019} é um
+programa de análise filogenética bayesiana que estima árvores com o tempo nos ramos
+(cronogramas). Há muitos tutoriais no site do BEAST 2 (\url{https://www.beast2.org}) e no
+\emph{Taming the BEAST} (\url{https://taming-the-beast.org}). Uma análise bayesiana combina
+três ingredientes: a matriz de dados, o modelo de substituição de nucleotídeos e as
+distribuições \emph{a priori} (\emph{priors}) de cada parâmetro. O resultado não é uma única
+árvore, mas uma amostra de milhares de árvores e valores de parâmetros, a distribuição
+\emph{a posteriori}.
+
+Vamos usar a matriz concatenada de Hylodidae (16S + COI) e, para datar a árvore, uma
+\emph{prior} para a taxa de substituição do 16S baseada em estimativas publicadas para anuros,
+como no tutorial original.
+
+% =====================================================================
+\section{Instalação}
+% =====================================================================
+
+\begin{enumerate}
+\item \textbf{BEAST 2.} Baixe e instale a versão para o seu sistema em
+\url{https://www.beast2.org}. O pacote traz o BEAUti (que monta a análise), o BEAST (que
+roda a análise) e o TreeAnnotator (que resume as árvores).
+\item \textbf{bModelTest.} Abra o BEAUti, vá em \ui{File > Manage Packages}, selecione
+\ui{bModelTest} \cite{bouckaert2017} e clique em \ui{Install/Upgrade}. Feche e abra o BEAUti
+de novo para que o pacote seja carregado.
+\item \textbf{Tracer.} Baixe em \url{https://github.com/beast-dev/tracer/releases}
+\cite{rambaut2018}.
+\item \textbf{FigTree.} O mesmo da Prática~5.
+\end{enumerate}
+
+% =====================================================================
+\section{A matriz com as partições}
+% =====================================================================
+
+O BEAUti lê as partições de um bloco \verb|sets| no fim do arquivo NEXUS. Abra o
+\arq{hylodidae_concatenado.nex} no Sublime Text ou no Notepad++ e cole no fim do arquivo,
+depois do \verb|END;| que fecha a matriz, o bloco abaixo, usando os números do seu
+\arq{particoes.txt}:
+\begin{Verbatim}
+  ;
+END;
+
+begin sets;
+  charset p16S = 1-2475;
+  charset COI  = 2476-3187;
+end;
+\end{Verbatim}
+Salve com o nome \arq{hylodidae_particionado.nex}. O nome \verb|p16S| começa com uma letra
+porque, no formato NEXUS, um nome não pode começar com número.
+
+\begin{quote}\small
+\textbf{Na vida real.} Na Prática~5, o COI foi dividido nas três posições do códon. Aqui usamos
+só duas partições para ter menos parâmetros e uma análise mais rápida.
+\end{quote}
+
+% =====================================================================
+\section{Montando a análise no BEAUti}
+% =====================================================================
+
+\subsection{Partitions}
+
+Vá em \ui{File > Import Alignment} e abra o \arq{hylodidae_particionado.nex}. O BEAUti mostra
+uma linha para cada partição: \verb|p16S| (2475 sítios) e \verb|COI| (712).
+
+Os dois fragmentos vêm do DNA mitocondrial, que é herdado como uma unidade só: eles
+compartilham a mesma árvore. Selecione as duas linhas (clique na primeira e, com
+\tecla{Shift}, na segunda) e clique em \ui{Link Trees}. A coluna \ui{Tree} passa a mostrar
+\verb|p16S| nas duas linhas. Os modelos de substituição (\ui{Site Model}) e os relógios
+(\ui{Clock Model}) continuam separados: cada marcador terá o seu.
+
+\subsection{Tip Dates}
+
+Deixe como está.
+
+\subsection{Site Model}
+
+Em vez de escolher um modelo de substituição, vamos usar o pacote bModelTest
+\cite{bouckaert2017}, que estima o modelo junto com a árvore: durante a análise, ele passa por
+vários modelos e calcula a probabilidade de cada um. Na lista da esquerda, clique em \verb|p16S|
+e troque \ui{Gamma Site Model} por \ui{BEAST Model Test}. Faça o mesmo para \verb|COI|. Deixe
+\ui{Mutation Rate} em 1,0, sem marcar \ui{estimate}: as diferenças de taxa entre os dois
+marcadores ficarão por conta dos relógios.
+
+\subsection{Clock Model}\label{sec:clock}
+
+Usaremos o relógio estrito (\ui{Strict Clock}), o padrão do BEAUti, que supõe a mesma taxa de
+substituição em todos os ramos da árvore. Cada marcador terá o seu relógio, porque o COI
+evolui mais rápido que o 16S.
+
+\begin{quote}\small
+\textbf{Na vida real.} Numa árvore com dezenas de milhões de anos, como esta, dificilmente a
+taxa é a mesma em todos os ramos. Um relógio relaxado, em que cada ramo tem a sua taxa (por
+exemplo, o \ui{Optimised Relaxed Clock}, do pacote ORC), seria provavelmente mais adequado,
+mas tem mais parâmetros e demora mais para convergir.
+\end{quote}
+
+Para transformar distâncias genéticas em tempo, é preciso informar ao BEAST algo sobre o
+tempo: a idade de um nó (por um fóssil ou um evento geológico) ou a taxa de substituição. Como
+no tutorial original, vamos usar uma \emph{prior} para a taxa do 16S, ajustada a quatro
+estimativas publicadas para anuros \cite{lemmon2007,fouquet2012,gehara2017,dufresnes2022}:
+0,006; 0,00555; 0,00277 e 0,005 substituições por sítio por milhão de anos. O script
+\arq{ajuste_taxa.R} ajusta uma distribuição lognormal a esses valores:
+\begin{Verbatim}
+install.packages("fitdistrplus")
+library(fitdistrplus)
+taxas <- c(0.006, 0.00555, 0.00277, 0.005)
+mean(taxas)
+ajuste <- fitdist(taxas, "lnorm")
+ajuste
+\end{Verbatim}
+A média das taxas (0,00483) será o valor inicial da taxa do 16S, e os parâmetros da lognormal,
+\verb|meanlog| $= -5{,}374295$ e \verb|sdlog| $= 0{,}304072$, serão usados na \emph{prior}
+(Seção~\ref{sec:priors}). Como as taxas estão em milhões de anos, as idades da árvore também
+sairão em milhões de anos.
+
+O 16S calibra o tempo; a taxa do COI será estimada a partir dos dados. No BEAUti:
+\begin{enumerate}
+\item No menu \ui{Mode}, desmarque \ui{Automatic set clock rate}.
+\item Na aba \ui{Clock Model}, clique em \verb|p16S|, digite \verb|0.00483| em \ui{Mean clock
+rate} e marque \ui{estimate}.
+\item Clique em \verb|COI|, digite \verb|0.01| em \ui{Mean clock rate} e marque
+\ui{estimate}.
+\end{enumerate}
+
+\subsection{Priors}\label{sec:priors}
+
+\begin{enumerate}
+\item Na primeira linha, \verb|Tree.t:p16S|, deixe o \ui{Yule Model}, a \emph{prior} de árvore
+mais simples: as linhagens só se originam, com uma única taxa de especiação. (O \ui{Birth Death
+Model} também permite a extinção, mas tem um parâmetro a mais.)
+
+\item \textbf{Taxa do 16S.} Na linha \verb|clockRate.c:p16S|, troque \ui{Uniform} por
+\ui{Log Normal} e clique no triângulo à esquerda do nome para abrir os detalhes. Digite
+\verb|M| $= -5.374295$ e \verb|S| $= 0.304072$ (sem marcar \ui{Mean In Real Space}). Ao lado,
+o BEAUti desenha a distribuição: ela deve ter mediana 0,00463 e média 0,00485. Compare com o
+gráfico feito no R pelo fim do script \arq{ajuste_taxa.R}.
+
+\item \textbf{Taxa do COI.} Na linha \verb|clockRate.c:COI|, troque \ui{Uniform} por
+\ui{Log Normal} e digite \verb|M| $= -4.68$ e \verb|S| $= 1.0$. Em anfíbios, o COI acumula
+diferenças cerca de duas vezes mais depressa que o 16S \cite{vences2005b}. Por isso a mediana
+dessa \emph{prior} é o dobro da do 16S ($-5{,}374 + \ln 2 \approx -4{,}68$, mediana 0,00928),
+mas o desvio é bem maior ($S = 1$, contra 0,30 do 16S): o intervalo de 95\% vai de 0,0013 a
+0,066, ou seja, de cerca de 0,3 a 14 vezes a taxa do 16S. A \emph{prior} do 16S é estreita
+porque é ela que calibra o tempo; a do COI é larga porque só ajuda, e quem decide são os dados.
+
+\item \textbf{Monofilia de Hylodidae.} Clique em \ui{+ Add Prior}, escolha \ui{MRCA prior} e
+clique em \ui{OK}. Em \ui{Taxon set label}, escreva \verb|Hylodidae|. Selecione todos os táxons
+da lista da esquerda (\tecla{Ctrl+A}) e passe-os para a direita com o botão \texttt{>>}; depois, selecione
+\emph{Limnomedusa macroglossa} na lista da direita e devolva-a com \texttt{<<}. Clique em \ui{OK}
+e, na nova linha (a que começa com o botão \ui{Hylodidae}), marque \ui{monophyletic}.
+
+Temos um único grupo externo, e só um relógio não basta para posicionar bem a raiz da árvore.
+Por isso forçamos a monofilia de Hylodidae, que é bem sustentada por estudos anteriores
+\cite{vittorazzi2021,desa2022}. Bônus: o Tracer passará a mostrar a idade do ancestral comum
+mais recente de Hylodidae (\verb|mrca.age(Hylodidae)|).
+
+\item Deixe as outras \emph{priors} como estão.
+\end{enumerate}
+
+\begin{quote}\small
+\textbf{Na vida real.} O ideal é não forçar a monofilia e incluir vários grupos externos, de
+modo que os dados mostrem se o grupo é monofilético.
+\end{quote}
+
+\subsection{MCMC}
+
+Em \ui{Chain Length}, digite \verb|1000000| (um milhão de gerações). Mantenha o registro a cada
+1000 gerações (\ui{Log Every}, dentro de \ui{tracelog} e \ui{treelog}), o valor padrão. Salve
+o arquivo com \ui{File > Save As}, com o nome \arq{hylodidae.xml}, na pasta \arq{pratica_beast}.
+
+\begin{quote}\small
+\textbf{Na vida real.} Um milhão de gerações é pouco: o ideal é rodar pelo menos 10 milhões
+($10^7$) e conferir no Tracer se todos os parâmetros convergiram.
+\end{quote}
+
+% =====================================================================
+\section{Rodando o BEAST}
+% =====================================================================
+
+Abra o BEAST, clique em \ui{Choose file...} ao lado de \ui{Input file}, escolha o arquivo
+\arq{hylodidae.xml} e clique em \ui{Run}. A janela mostra o andamento da análise, que leva
+poucos minutos. Ao terminar, a pasta terá dois arquivos novos:
+\begin{itemize}
+\item \arq{hylodidae.log}: os valores dos parâmetros a cada 1000 gerações;
+\item \arq{hylodidae-p16S.trees}: as árvores amostradas a cada 1000 gerações. O nome vem da
+árvore, que o BEAUti batizou com o nome da primeira partição.
+\end{itemize}
+É recomendável rodar pelo menos mais uma réplica com outra semente (\ui{Random number seed:},
+na janela do BEAST), em outra pasta, para conferir se as duas chegam ao mesmo resultado.
+
+% =====================================================================
+\section{Resultados}
+% =====================================================================
+
+\paragraph{Tracer.} Abra o Tracer e carregue o \arq{hylodidae.log} com o botão \ui{+} no
+canto superior esquerdo. Na coluna \ui{ESS} (\emph{effective sample size}), procure valores
+acima de 200; valores menores aparecem em destaque e indicam que a cadeia precisa rodar por
+mais tempo. Se você rodou duas réplicas, carregue as duas e compare as médias.
+
+\paragraph{TreeAnnotator.} O TreeAnnotator resume as milhares de árvores do arquivo
+\arq{.trees} em uma só, a árvore de máxima credibilidade de clados (\emph{Maximum clade
+credibility tree}).
+\begin{enumerate}
+\item Em \ui{Burn in percentage}, deixe 10 (as primeiras 10\% das árvores são descartadas).
+\item Em \ui{Target tree type}, deixe \ui{Maximum clade credibility tree}.
+\item Em \ui{Node heights}, troque \ui{Common Ancestor heights} por \ui{Mean heights}.
+\item Em \ui{Input Tree File}, escolha \arq{hylodidae-p16S.trees} (\ui{Choose file...}); em
+\ui{Output File}, escreva \arq{hylodidae_mcc.tree}. Clique em \ui{Run}.
+\end{enumerate}
+
+\paragraph{FigTree.} Abra o \arq{hylodidae_mcc.tree} no FigTree. No painel da esquerda:
+\begin{itemize}
+\item marque \ui{Node Labels} e, em \ui{Display}, escolha \ui{posterior}: é a probabilidade
+posterior de cada clado;
+\item marque \ui{Node Bars} e, em \ui{Display}, escolha \ui{height\_95\%\_HPD}: as barras
+mostram o intervalo de 95\% de maior densidade da idade de cada nó;
+\item marque \ui{Scale Axis} e, dentro dele, \ui{Reverse axis}, para ler as idades em milhões
+de anos antes do presente.
+\end{itemize}
+
+% =====================================================================
+\section*{Perguntas}
+\addcontentsline{toc}{section}{Perguntas}
+% =====================================================================
+
+\begin{enumerate}
+\item Todos os parâmetros chegaram a ESS acima de 200? Quais ficaram abaixo? O que você faria
+para resolver?
+\item Qual a idade estimada (média e intervalo de 95\%) do ancestral comum mais recente de
+Hylodidae?
+\item No Tracer, compare as médias de \verb|clockRate.COI| e \verb|clockRate.p16S|. Quantas
+vezes o COI evolui mais rápido que o 16S? O resultado está dentro do que esperávamos pela
+\emph{prior}?
+\end{enumerate}
+
+\begin{resposta}
+Valores de duas corridas de um milhão de gerações (sementes 1 e 2), com 10\% de
+\emph{burn-in}; a sua corrida terá números parecidos, mas não idênticos.
+
+1. Não. Com um milhão de gerações, a maioria dos parâmetros fica abaixo de 200: a posterior
+(cerca de 130), a altura da árvore (135 e 184), as taxas dos relógios (cerca de 90 a 130) e
+vários parâmetros do bModelTest, os mais baixos (\verb|BMT_ProportionInvariable.p16S| e
+\verb|BMT_gammaShape.p16S|, cerca de 40). Ao todo, cerca de 30 dos 44 parâmetros ficaram
+abaixo de 200; entre os que passaram estão a verossimilhança (222 e 280), a taxa de especiação
+(cerca de 250) e alguns parâmetros do bModelTest. A solução é rodar mais gerações (pelo menos
+$10^7$) ou combinar várias réplicas com o LogCombiner.
+
+2. Cerca de 42~Ma: 42,8~Ma (95\% HPD 22,1--69,3) e 41,3~Ma (20,4--66,6) nas duas corridas.
+O intervalo é largo porque a única informação de tempo é a \emph{prior} da taxa do 16S.
+
+3. \verb|clockRate.p16S| $\approx 0{,}0050$ e \verb|clockRate.COI| $\approx 0{,}0178$: o COI
+evolui cerca de 3,5 vezes mais rápido que o 16S (95\% de 2,6 a 4,8 vezes). É mais que as 2
+vezes de Vences et al., que usaram distâncias não corrigidas (que subestimam as diferenças no
+gene mais rápido), mas fica bem dentro do intervalo da \emph{prior} (0,3 a 14 vezes).
+\end{resposta}
+
+% =====================================================================
+\appendix
+\section{Problemas comuns}\label{ap:problemas}
+% =====================================================================
+
+\begin{description}[style=nextline,leftmargin=1.5em]
+\item[\ui{BEAST Model Test} não aparece] O pacote não foi instalado, ou o BEAUti não foi
+reaberto depois da instalação.
+\item[O BEAUti mostra uma partição só] O bloco \verb|begin sets; ... end;| não foi colado no fim
+do arquivo, ou falta algum ponto e vírgula.
+\item[A taxa do relógio não pode ser estimada] Desmarque \ui{Automatic set clock rate} no menu
+\ui{Mode}.
+\item[O BEAST avisa que o arquivo \arq{.log} já existe] Já há uma análise com o mesmo nome na
+pasta. Rode a nova réplica em outra pasta, ou escolha a opção de sobrescrever.
+\end{description}
+
+% =====================================================================
+\section{Alterações em relação à versão anterior}\label{ap:mudancas}
+% =====================================================================
+
+\begin{enumerate}
+\item \textbf{Dados.} No lugar do 16S de \emph{Pristimantis rupicola}, é usada a matriz
+concatenada de Hylodidae (16S + COI) da Prática~4, com duas partições e árvore compartilhada.
+\item \textbf{Relógios.} Um relógio estrito para cada marcador: o do 16S, com a \emph{prior}
+do tutorial original, calibra o tempo; o do COI é estimado, com uma \emph{prior} lognormal
+larga centrada no dobro da taxa do 16S.
+\item \textbf{Simplificações para a aula.} Relógio estrito no lugar do relaxado, Yule no lugar
+do \emph{Birth Death} e um milhão de gerações no lugar de dez milhões, com quadros indicando o
+que seria feito numa análise real.
+\item \textbf{Monofilia.} Hylodidae forçado como monofilético, por haver um único grupo externo.
+\item \textbf{Visualização.} Detalhes do TreeAnnotator e do FigTree (barras de 95\% HPD e eixo
+de tempo); capturas de tela substituídas por descrições em texto; perguntas ao final.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem{bouckaert2017} Bouckaert, R.~R. \& Drummond, A.~J. 2017. bModelTest: Bayesian
+phylogenetic site model averaging and model comparison. \emph{BMC Evolutionary Biology} 17: 42.
+\bibitem{bouckaert2019} Bouckaert, R. \emph{et al.} 2019. BEAST 2.5: an advanced software
+platform for Bayesian evolutionary analysis. \emph{PLoS Computational Biology} 15(4): e1006650.
+\bibitem{desa2022} de Sá, F.~P., Condez, T.~H., Lyra, M.~L., Haddad, C.~F.~B. \& Malagoli,
+L.~R. 2022. Unveiling the diversity of Giant Neotropical Torrent frogs (Hylodidae):
+phylogenetic relationships, morphology, and the description of two new species.
+\emph{Systematics and Biodiversity} 20(1): 2039318.
+\bibitem{dufresnes2022} Dufresnes, C. \emph{et al.} 2022. Shedding light on taxonomic chaos:
+diversity and distribution of South Asian skipper frogs (Anura, Dicroglossidae,
+\emph{Euphlyctis}). \emph{Systematics and Biodiversity} 20(1): 2102686.
+\bibitem{fouquet2012} Fouquet, A., Noonan, B.~P., Rodrigues, M.~T., Pech, N., Gilles, A. \&
+Gemmell, N.~J. 2012. Multiple Quaternary refugia in the eastern Guiana Shield revealed by
+comparative phylogeography of 12 frog species. \emph{Systematic Biology} 61(3): 461--489.
+\bibitem{gehara2017} Gehara, M., Barth, A., Oliveira, E.~F., Costa, M.~A., Haddad, C.~F.~B.
+\& Vences, M. 2017. Model-based analyses reveal insular population diversification and cryptic
+frog species in the \emph{Ischnocnema parva} complex in the Atlantic forest of Brazil.
+\emph{Molecular Phylogenetics and Evolution} 112: 68--78.
+\bibitem{lemmon2007} Lemmon, E.~M., Lemmon, A.~R. \& Cannatella, D.~C. 2007. Geological and
+climatic forces driving speciation in the continentally distributed trilling chorus frogs
+(\emph{Pseudacris}). \emph{Evolution} 61(9): 2086--2103.
+\bibitem{rambaut2018} Rambaut, A., Drummond, A.~J., Xie, D., Baele, G. \& Suchard, M.~A.
+2018. Posterior summarization in Bayesian phylogenetics using Tracer 1.7. \emph{Systematic
+Biology} 67(5): 901--904.
+\bibitem{vences2005b} Vences, M., Thomas, M., Bonett, R.~M. \& Vieites, D.~R. 2005.
+Deciphering amphibian diversity through DNA barcoding: chances and challenges.
+\emph{Philosophical Transactions of the Royal Society B} 360(1462): 1859--1868.
+\bibitem{vittorazzi2021} Vittorazzi, S.~E., Augusto-Alves, G., Neves-da-Silva, D.,
+Carvalho-e-Silva, A.~M.~P.~T., Recco-Pimentel, S.~M., Toledo, L.~F., Lourenço, L.~B. \&
+Bruschi, D.~P. 2021. Paraphyly in the giant torrent-frogs (Anura: Hylodidae:
+\emph{Megaelosia}) and the description of a new genus. \emph{Salamandra} 57(2): 274--284.
+\end{thebibliography}
+
+\end{document}
