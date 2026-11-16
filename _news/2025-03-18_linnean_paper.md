@@ -5,4 +5,4 @@ inline: true
 related_posts: false
 ---
 
-Paper published in the *Biological Journal of the Linnean Society* with colleagues from INPA and several Brazilian and international universities. [Read it here](https://doi.org/10.1093/biolinnean/blaf006).
+Paper on how historical climate cycles shaped the diversification and demography of *Anolis chrysolepis* lizards, published in the *Biological Journal of the Linnean Society* with colleagues from INPA and several Brazilian and international universities. [Read it here](https://doi.org/10.1093/biolinnean/blaf006).
