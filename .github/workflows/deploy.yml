@@ -79,6 +79,12 @@ jobs:
           valueFile: "_config.yml"
           propertyPath: "giscus.repo"
           value: ${{ github.repository }}
+      - name: Compute people photo positions (face detection)
+        continue-on-error: true
+        run: |
+          python3 -m venv /tmp/photo-venv
+          /tmp/photo-venv/bin/pip install --quiet "opencv-python-headless<5" || /tmp/photo-venv/bin/pip install --quiet opencv-python-headless
+          /tmp/photo-venv/bin/python scripts/photo_positions.py
       - name: Install and Build 🔧
         run: |
           pip3 install --upgrade jupyter
