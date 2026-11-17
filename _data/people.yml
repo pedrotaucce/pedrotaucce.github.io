@@ -1,8 +1,8 @@
 # Pessoas do LaBESTA.
 # Para cada pessoa: name, role, photo (opcional), bio (opcional, aceita Markdown) e lattes (opcional, URL do Lattes).
+# Sem photo, aparece um espaço reservado. Sem bio ou lattes, esses itens simplesmente não aparecem.
 # O enquadramento da foto (centrado no rosto) é calculado automaticamente a cada deploy.
 # Só se quiser forçar outro enquadramento, acrescente photo_position (ex.: "50% 20%").
-# Sem photo, aparece um espaço reservado. Sem bio ou lattes, esses itens simplesmente não aparecem.
 
 groups:
   - id: pi
@@ -15,59 +15,66 @@ groups:
         photo: /assets/img/people/PPGT_jacare.jpeg
         lattes: "http://lattes.cnpq.br/6010051338306653"
         bio: |
-          I am a broadly trained evolutionary zoologist, currently a Professor of Vertebrate Zoology at São Paulo State University (UNESP), Bauru, Brazil.
-
-          My research focuses on integrating disciplines such as bioacoustics, molecular phylogenetics, and morphology to explore the diversity and evolution of tetrapods, with a special emphasis on herpetofauna (amphibians and reptiles). I am particularly interested in the processes driving biodiversity, and more recently, the interplay between genotype and phenotype has become a central theme in my work.
+          My research focuses on integrating disciplines such as bioacoustics, molecular phylogenetics, and morphology to explore the diversity and evolution of amphibians and reptiles. I am particularly interested in the processes driving biodiversity, and more recently, the interplay between genotype and phenotype has become a central theme in my work.
 
   - id: masters
     title: "Master's students"
     people:
       - name: Natalia Campos
-        role: "Master's student, PPG Biodiversidade (FAPESP scholarship)"
+        role: "Master's student, PPG Biodiversidade"
         photo: ""
-        bio: ""
-        lattes: ""
+        bio: |
+          Natalia is currently focused in the cellular, behavioral, and genetic mechanisms of color changing in the Neotropical treefrog *Boana prasina*. 
+        lattes: "http://lattes.cnpq.br/3699951935813366"
+      - name: Ana Carolina Carvalho
+        role: "Master's student, PPG Biociências"
+        photo: ""
+        bio: |
+          Ana is studying the diversification patterns of the leaf-litter frog *Adenomera marmorata* within the Brazilian Atlantic rainforest.
+        lattes: "http://lattes.cnpq.br/3287758876490736"
       - name: Eldritch Sanches
         role: "Master's student, PPG Biociências"
-        photo: ""
-        bio: ""
-        lattes: ""
-      - name: Ana Carolina Alvarez
-        role: "Master's student, PPG Biociências"
-        photo: ""
-        bio: ""
-        lattes: ""
+        photo: /assets/img/people/Eldritch_Sanches.jpg
+        bio: |
+          For his master's study, Eldritch is interested in the phylogeography of the leaf-litter frog *Adenomera andrea* in the Amazon basin.
+        lattes: "http://lattes.cnpq.br/4593752128798125"
 
   - id: undergrad
-    title: Undergraduate researchers
+    title: Undergraduate students
     people:
       - name: Sofia Pacheco
-        role: FAPESP undergraduate research scholar
+        role: undergraduate student
         photo: ""
-        bio: ""
-        lattes: ""
+        bio: |
+          Sofia is interested in the bioacoustics of two *Ischnocnema* (Anura: Brachycephalidae) species and in developing automatizated methods to analyse their calls.
+        lattes: "http://lattes.cnpq.br/1383893930523216"
       - name: Carolina Menardi
-        role: FAPESP undergraduate research scholar
+        role: undergraduate student
         photo: /assets/img/people/Carolina_Menardi.jpg
-        bio: ""
-        lattes: ""
+        bio: |
+          Carol is currently studying the karotype of two partially sympatric species of microhylids of the genus *Elachistocleis*.
+        lattes: "http://lattes.cnpq.br/4609628113998330"
       - name: Aline Pereira
-        role: COPE Conecta scholar
+        role: undergraduate student
         photo: ""
-        bio: ""
-        lattes: ""
+        bio: |
+          Aline is trying to understand why two sister leaf-litter frog species with adjacent geographic distributions in the Atlantic rainforest share alleles in the nuclear DNA.
+        lattes: "http://lattes.cnpq.br/9752313917007383"
       - name: Pedro Lopes
         role: Volunteer intern
         photo: /assets/img/people/Pedro_Lopes.jpg
-        bio: ""
-        lattes: ""
+        bio: |
+          Pedro studies molecular species delimitation of some small toads of the genus *Dendrophryniscus* based on mitochondrial DNA. 
+        lattes: "http://lattes.cnpq.br/2022155821735573"
       - name: João Rangel
         role: Volunteer intern
-        photo: ""
-        bio: ""
-        lattes: ""
+        photo: /assets/img/people/Joao_Rangel.jpg
+        bio: |
+          João is currently focused on the taxonomy of a leaf-litter frog species not found within the past 50 years: *Ischnocnema gualteri*.
+        lattes: "http://lattes.cnpq.br/6871665971380494"
       - name: Nathália Alves
         role: Volunteer intern
         photo: ""
-        bio: ""
-        lattes: ""
+        bio: |
+          Nath is uncovering the knowledge gaps in the brachycephalid frog genus *Ischnocnema*, focused in the Linnean, Wallacean, and Darwinian shortfalls.
+        lattes: "http://lattes.cnpq.br/6740424908324076"
