@@ -45,8 +45,8 @@ nav_order: 8
     <section id="join">
       <h2 class="category">Join the lab</h2>
       <div class="join-lab">
-        <p><strong>Postgraduate students.</strong> Prof. Pedro Taucci advises in two graduate programs at Unesp: the <strong>PPG Biociências Interunidades</strong> (Bauru and Assis campuses) and the <strong>PPG Biodiversidade</strong> (São José do Rio Preto campus). Selection processes usually take place around <strong>October/November</strong> (Biociências Interunidades) and <strong>May/June</strong> (Biodiversidade) of each year. Check each program's website for the calls and requirements.</p>
-        <p><strong>Prospective postdoctoral fellows.</strong> Get in touch to look for funding together, for example through a <a href="https://fapesp.br" target="_blank" rel="noopener">FAPESP postdoctoral fellowship</a>.</p>
+        <p><strong>Postgraduate students.</strong> Prof. Pedro Taucci advises in two graduate programs at Unesp: the <a href="https://www.assis.unesp.br/#!/ensino/pos-graduacao/cursos/biociencias/" target="_blank" rel="noopener"><strong>PPG Biociências Interunidades</strong></a> (Bauru and Assis campuses) and the <a href="https://www.ibilce.unesp.br/#!/pos-graduacao/programas/biodiversidade/" target="_blank" rel="noopener"><strong>PPG Biodiversidade</strong></a> (São José do Rio Preto campus). Selection processes usually take place around <strong>October/November</strong> (Biociências Interunidades) and <strong>May/June</strong> (Biodiversidade) of each year. Check each program's website for the calls and requirements.</p>
+        <p><strong>Prospective postdoctoral fellows.</strong> Get in touch to look for funding together, for example through a <a href="https://fapesp.br/bolsas/pd" target="_blank" rel="noopener">FAPESP postdoctoral fellowship</a>.</p>
         <p>Contact details are at the bottom of the <a href="{{ '/' | relative_url }}">Home</a> page.</p>
       </div>
     </section>
