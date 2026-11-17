@@ -44,7 +44,7 @@ groups:
     people:
       - name: Sofia Pacheco
         role: Undergraduate student
-        photo: ""
+        photo: /assets/img/people/Sofia_Pacheco.jpg
         bio: |
           Sofia is interested in the bioacoustics of two *Ischnocnema* species (Anura: Brachycephalidae) and in developing automated methods to analyze their calls.
         lattes: "http://lattes.cnpq.br/1383893930523216"
@@ -56,7 +56,7 @@ groups:
         lattes: "http://lattes.cnpq.br/4609628113998330"
       - name: Aline Pereira
         role: Undergraduate student
-        photo: ""
+        photo: /assets/img/people/Aline_Pereira.jpg
         bio: |
           Aline is trying to understand why two sister leaf-litter frog species with adjacent geographic distributions in the Atlantic rainforest share alleles in their nuclear DNA.
         lattes: "http://lattes.cnpq.br/9752313917007383"
