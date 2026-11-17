@@ -2,7 +2,7 @@
 layout: page
 title: Zoologia de Anamniota
 description: "Disciplina obrigatória do curso de Ciências Biológicas (3º ano, 1º semestre), Unesp Bauru"
-img: /assets/img/teaching/Pough.jpg
+img: /assets/img/teaching/Boana_caingua.jpg
 importance: 1
 category: Undergraduate
 ---

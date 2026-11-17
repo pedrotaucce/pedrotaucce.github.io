@@ -32,7 +32,6 @@ horizontal: false
     {% for course in sorted_courses %}
       {% include teaching/courses.liquid %}
     {% endfor %}
-    </div>
   </div>
   {% endif %}
   {% endfor %}
@@ -53,7 +52,6 @@ horizontal: false
     {% for course in sorted_courses %}
       {% include teaching/courses.liquid %}
     {% endfor %}
-    </div>
   </div>
   {% endif %}
 {% endif %}

@@ -1,9 +1,6 @@
-"AJP":
-  url: https://aapt.scitation.org/journal/ajp
-  color: "#00369f"
-
-"PhysRev":
-  url: https://journals.aps.org/
-
-"Vision":
-  color: "#009f36"
+# Siglas e cores de periódicos/congressos (usadas só se uma entrada do .bib tiver o campo "abbr").
+# Exemplo (remova o "#" para usar):
+#
+# "SystBiodivers":
+#   url: https://www.tandfonline.com/journals/tsab20
+#   color: "#2a7f62"
