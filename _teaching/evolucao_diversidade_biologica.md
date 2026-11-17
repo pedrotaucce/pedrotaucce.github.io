@@ -2,7 +2,7 @@
 layout: page
 title: Evolução da Diversidade Biológica
 description: "Disciplina do curso de Ciências Biológicas, Unesp Bauru"
-img: /assets/img/teaching/Pough.jpg
+img: /assets/img/teaching/Darwin_tree.png
 importance: 3
 category: Undergraduate
 ---

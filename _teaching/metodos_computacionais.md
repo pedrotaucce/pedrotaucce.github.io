@@ -2,7 +2,7 @@
 layout: page
 title: Métodos Computacionais em Sistemática e Filogeografia
 description: "Disciplina de pós-graduação (Unesp), ofertada bienalmente"
-img: /assets/img/teaching/integrative_taxonomy.jpg
+img: /assets/img/teaching/coalescencia.png
 importance: 1
 category: Graduate
 ---

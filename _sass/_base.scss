@@ -672,11 +672,33 @@ footer.sticky-bottom {
   .card {
     img {
       width: 100%;
+      // todas as imagens dos cards com o mesmo enquadramento (4:3), para os cards ficarem alinhados
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    // esboço de Darwin (retrato): mostra o topo da página, onde está a árvore
+    img[src*="Darwin_tree"] {
+      object-position: 50% 7%;
+    }
+
+    // ilustração da coalescência: mostra inteira, sem cortar os rótulos
+    img[src*="coalescencia"] {
+      object-fit: contain;
+      background-color: #fff7ef;
     }
   }
 
   .col {
     padding-bottom: 1rem;
+  }
+
+  // títulos longos (ex.: "Métodos Computacionais em Sistemática e Filogeografia") sem quebrar no meio da palavra
+  .card-title {
+    font-size: 1.6rem;
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
 
   .grid-sizer,
