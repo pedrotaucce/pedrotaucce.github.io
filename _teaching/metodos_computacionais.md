@@ -2,7 +2,7 @@
 layout: page
 title: Métodos Computacionais em Sistemática e Filogeografia
 description: "Disciplina de pós-graduação (Unesp), ofertada bienalmente"
-img: /assets/img/teaching/coalescent.png
+img: /assets/img/teaching/integrative_taxonomy.jpg
 importance: 1
 category: Graduate
 ---
@@ -14,10 +14,6 @@ Disciplina **bienal**, ofertada nos Programas de Pós-Graduação em **Biociênc
 - **Professores:** Pedro Paulo Goulart Taucci e Marcus Thadeu Teixeira Santos
 - **Carga horária:** 60 horas
 - **Vagas:** 10
-
-{% include figure.liquid path="assets/img/teaching/coalescent.png" class="img-fluid rounded z-depth-1" alt="Ilustração da coalescência: uma população de 10 indivíduos, uma amostra de 3 e a genealogia da amostra" %}
-
-*Ilustração original da coalescência, simulada em uma população de N = 10 indivíduos. Rastreando a amostra (n = 3) para trás no tempo, as linhagens se encontram em ancestrais comuns. T(3) é o tempo até a primeira coalescência, quando ainda há três linhagens, e T(2) é o tempo seguinte, até o ancestral comum mais recente da amostra.*
 
 ## Tutoriais
 
