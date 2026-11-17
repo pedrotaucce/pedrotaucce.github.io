@@ -24,7 +24,9 @@ nav_order: 8
         <div class="card person{% if group.wide %} person-wide{% endif %}">
           <div class="person-photo">
             {% if p.photo != blank %}
-            <img src="{{ p.photo | relative_url }}" alt="Photo of {{ p.name }}" loading="lazy"{% if p.photo_position %} style="object-position: {{ p.photo_position }}"{% endif %}>
+            {% assign photo_file = p.photo | split: '/' | last %}
+            {% assign photo_pos = p.photo_position | default: site.data.people_photo_positions[photo_file] | default: '50% 30%' %}
+            <img src="{{ p.photo | relative_url }}" alt="Photo of {{ p.name }}" loading="lazy" style="object-position: {{ photo_pos }}">
             {% else %}
             <img class="person-placeholder" src="{{ '/assets/img/people/placeholder.svg' | relative_url }}" alt="" loading="lazy">
             {% endif %}

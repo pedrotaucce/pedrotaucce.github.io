@@ -1,6 +1,7 @@
 # Pessoas do LaBESTA.
-# Para cada pessoa: name, role, photo (opcional), photo_position (opcional, ex.: "50% 30%"),
-# bio (opcional, aceita Markdown) e lattes (opcional, URL do currículo Lattes).
+# Para cada pessoa: name, role, photo (opcional), bio (opcional, aceita Markdown) e lattes (opcional, URL do Lattes).
+# O enquadramento da foto (centrado no rosto) é calculado automaticamente a cada deploy.
+# Só se quiser forçar outro enquadramento, acrescente photo_position (ex.: "50% 20%").
 # Sem photo, aparece um espaço reservado. Sem bio ou lattes, esses itens simplesmente não aparecem.
 
 groups:
@@ -12,7 +13,6 @@ groups:
         role: Lab Head
         affiliation: Department of Biological Sciences, School of Sciences, São Paulo State University (Unesp), Bauru
         photo: /assets/img/people/PPGT_jacare.jpeg
-        photo_position: "50% 40%"
         lattes: "http://lattes.cnpq.br/6010051338306653"
         bio: |
           I am a broadly trained evolutionary zoologist, currently a Professor of Vertebrate Zoology at São Paulo State University (UNESP), Bauru, Brazil.
@@ -49,7 +49,6 @@ groups:
       - name: Carolina Menardi
         role: FAPESP undergraduate research scholar
         photo: /assets/img/people/Carolina_Menardi.jpg
-        photo_position: "55% 30%"
         bio: ""
         lattes: ""
       - name: Aline Pereira
@@ -60,7 +59,6 @@ groups:
       - name: Pedro Lopes
         role: Volunteer intern
         photo: /assets/img/people/Pedro_Lopes.jpg
-        photo_position: "50% 22%"
         bio: ""
         lattes: ""
       - name: João Rangel
