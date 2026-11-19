@@ -12,7 +12,7 @@ groups:
       - name: Pedro P. G. Taucci
         role: Lab Head
         affiliation: Department of Biological Sciences, School of Sciences, São Paulo State University (Unesp), Bauru
-        photo: /assets/img/people/PPGT_jacare.jpeg
+        photo: /assets/img/people/Pedro_Taucci.jpg
         lattes: "http://lattes.cnpq.br/6010051338306653"
         bio: |
           My research focuses on integrating disciplines such as bioacoustics, molecular phylogenetics, and morphology to explore the diversity and evolution of amphibians and reptiles. I am particularly interested in the processes driving biodiversity, and more recently, the interplay between genotype and phenotype has become a central theme in my work.
@@ -22,7 +22,7 @@ groups:
     people:
       - name: Natalia Campos
         role: "Master's student, PPG Biodiversidade"
-        photo: ""
+        photo: /assets/img/people/Natalia_Campos.jpg
         bio: |
           Nat is currently focusing on the cellular, behavioral, and genetic mechanisms of color change in the Neotropical treefrog *Boana prasina*. 
         lattes: "http://lattes.cnpq.br/3699951935813366"
@@ -74,7 +74,7 @@ groups:
         lattes: "http://lattes.cnpq.br/6871665971380494"
       - name: Nathália Alves
         role: Undergraduate student
-        photo: ""
+        photo: /assets/img/people/Nathalia_Alves.jpg
         bio: |
           Nath is investigating knowledge gaps in the brachycephalid frog genus *Ischnocnema*, focusing on the Linnean, Wallacean, and Darwinian shortfalls.
         lattes: "http://lattes.cnpq.br/6740424908324076"
