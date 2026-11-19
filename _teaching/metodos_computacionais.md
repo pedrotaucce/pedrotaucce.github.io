@@ -15,6 +15,10 @@ Disciplina **bienal**, ofertada nos Programas de Pós-Graduação em **Biociênc
 - **Carga horária:** 60 horas
 - **Vagas:** 10
 
+{% include figure.liquid path="assets/img/teaching/metodos_turma_2026.jpg" class="img-fluid rounded z-depth-1" alt="First class of the course / Primeira turma da disciplina em 2026" %}
+
+*The first class of the course (2026), during the in-person classes at the School of Sciences, Unesp Bauru. / Primeira turma da disciplina (2026), durante as aulas presenciais na Faculdade de Ciências da Unesp Bauru.*
+
 ## Tutoriais
 
 Os [tutoriais práticos da disciplina]({{ '/tutorials/' | relative_url }}) estão disponíveis no site, em português:
